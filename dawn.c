@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "dawn.h"
+
 int
 main(int argc, char **argv)
 {

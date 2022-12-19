@@ -8,14 +8,16 @@ LDFLAGS=-g
 all: dawn
 
 clean:
-	rm -f dawn.o
+	rm -f *.o
 	rm -f dawn
 
-dawn: dawn.o
+dawn: dawn.o util.o error.o lex.o
 	$(LD) $(LDFLAGS) $< -o $@
 
 .c.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 dawn.o: dawn.h
+util.o: util.h
+lex.o: util.h syntax.h
 
