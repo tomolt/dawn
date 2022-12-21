@@ -107,6 +107,14 @@ emit_rec(struct tile *tile, int nextreg, void *stream)
 		ins.has_immed = true;
 		ins.immed = tile->immed;
 		break;
+	
+	case OPCL_XCHG_FM:
+		ins.opcode = 0x87;
+		ins.has_modrm = true;
+		ins.mod = MOD_REG;
+		ins.reg = tile->opnum;
+		ins.rm  = regs[0];
+		break;
 	}
 
 	uint8_t buf[32], *ptr = buf;

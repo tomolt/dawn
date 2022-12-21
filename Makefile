@@ -26,4 +26,4 @@ lex.o: util.h syntax.h
 parse.o: util.h syntax.h ast.h
 scope.o: util.h syntax.h
 amd64/ins.o: util.h amd64/ins.h
-amd64/cover.o: util.h amd64/ins.h
+amd64/cover.o: util.h syntax.h amd64/ins.h
