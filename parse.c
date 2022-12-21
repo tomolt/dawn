@@ -2,8 +2,6 @@
 #include <stdio.h>
 
 #include "util.h"
-#include "ir.h"
-#include "lang.h"
 #include "syntax.h"
 
 #define ADV(ctx) (ctx)->tok = mxnexttok((ctx)->mx)
@@ -23,7 +21,6 @@
 typedef struct Parser P;
 typedef struct Nud Nud;
 typedef struct Led Led;
-typedef struct Dtor Dtor;
 
 struct Nud {
 	uint code : 8;
@@ -32,11 +29,6 @@ struct Nud {
 struct Led {
 	uint bp : 4;
 	uint code : 4;
-};
-
-struct Dtor {
-	Type *type;
-	char *sym;
 };
 
 static Nud Nuds[NUMTOKS] = {
@@ -151,139 +143,6 @@ pexpr(P *ctx, int minbp)
 	return expr;
 }
 
-static Type *
-pbase(P *ctx)
-{
-	uint qual = 0;
-	int sign = -1;
-	int rank = -1;
-	int kind = -1;
-	bool commited = false;
-	
-	for (;;) {
-		switch (ctx->tok.kind) {
-		case KCONST:
-			qual |= QCONST;
-			break;
-
-		case KVOLATILE:
-			qual |= QVOLATILE;
-			break;
-		
-		case KVOID:
-			if (kind >= 0) error(ctx->tok.sloc, "You cannot combine different base types.");
-			kind = TVOID;
-			break;
-
-		case KINT:
-			if (kind >= 0 && kind != TINT) error(ctx->tok.sloc, "You cannot combine different base types.");
-			kind = TINT;
-			break;
-
-		case KCHAR:
-			if (kind >= 0 && kind != TINT) error(ctx->tok.sloc, "You cannot combine different base types.");
-			if (rank >= 0) error(ctx->tok.sloc, "Size of integer type is over-specified.");
-			kind = TINT;
-			rank = RCHAR;
-			break;
-
-		case KSHORT:
-			if (kind >= 0 && kind != TINT) error(ctx->tok.sloc, "You cannot combine different base types.");
-			if (rank >= 0) error(ctx->tok.sloc, "Size of integer type is over-specified.");
-			kind = TINT;
-			rank = RSHORT;
-			break;
-
-		case KLONG:
-			if (kind >= 0 && kind != TINT) error(ctx->tok.sloc, "You cannot combine different base types.");
-			kind = TINT;
-			if (rank == RLONG) {
-				rank = RLLONG;
-			} else {
-				if (rank >= 0) error(ctx->tok.sloc, "Size of integer type is over-specified.");
-				rank = RLONG;
-			}
-			break;
-
-		case KSIGNED:
-			if (kind >= 0 && kind != TINT) error(ctx->tok.sloc, "You cannot combine different base types.");
-			if (sign >= 0) error(ctx->tok.sloc, "Signedness of integer type is over-specified.");
-			kind = TINT;
-			sign = 1;
-			break;
-
-		case KUNSIGNED:
-			if (kind >= 0 && kind != TINT) error(ctx->tok.sloc, "You cannot combine different base types.");
-			if (sign >= 0) error(ctx->tok.sloc, "Signedness of integer type is over-specified.");
-			kind = TINT;
-			sign = 0;
-			break;
-
-		case KFLOAT:
-			if (kind >= 0) error(ctx->tok.sloc, "You cannot combine different base types.");
-			kind = TFLOAT;
-			rank = RFLOAT;
-			break;
-		
-		case KDOUBLE:
-			if (kind >= 0) error(ctx->tok.sloc, "You cannot combine different base types.");
-			kind = TFLOAT;
-			rank = RDOUBLE;
-			break;
-
-		default:
-			if (!commited) return NULL;
-			switch (kind) {
-			case TVOID:
-				return voidtype(qual);
-			case TINT:
-				if (rank < 0) rank = RINT;
-				if (sign < 0) sign = 1;
-				return inttype(rank, sign, qual);
-			case TFLOAT:
-				return floattype(rank, qual);
-			default:
-				error(ctx->tok.sloc, "Missing primitive type.");
-			}
-		}
-		ADV(ctx);
-		commited = true;
-	}
-}
-
-static Dtor
-pdtor(P *ctx, Type *base)
-{
-	Dtor dtor;
-	uint qual;
-
-	dtor.type = base;
-	while (ctx->tok.kind == '*') {
-		ADV(ctx);
-		qual = 0;
-		while (ctx->tok.kind == KCONST || ctx->tok.kind == KVOLATILE) {
-			switch (ctx->tok.kind) {
-			case KCONST: qual |= QCONST; break;
-			case KVOLATILE: qual |= QVOLATILE; break;
-			}
-			ADV(ctx);
-		}
-		dtor.type = ptrtype(dtor.type, qual);
-	}
-	
-	if (ctx->tok.kind != SYMBOL) error(ctx->tok.sloc, "Expected symbol name in declaration.");
-	dtor.sym = ctx->tok.sym;
-	ADV(ctx);
-	
-	if (ctx->tok.kind == '(') {
-		ADV(ctx);
-		skip(ctx, ')');
-		dtor.type = functype(dtor.type);
-	}
-	
-	return dtor;
-}
-
 static bool
 pdecl(P *ctx)
 {
@@ -346,75 +205,6 @@ pdowhile(P *ctx)
 	skip(ctx, ';');
 }
 
-#if 0
-static void
-pwhile(P *ctx)
-{
-	Expr cond;
-	uint entry, header, bodyin, bodyout, exit;
-	
-	entry = CurBlk;
-	skip(ctx, KWHILE);
-
-	header = newblk();
-	skip(ctx, '(');
-	cond = pexpr(ctx, 0);
-	skip(ctx, ')');
-	cccjmp(torval(cond));
-	
-	bodyin = newblk();
-	pstmt(ctx);
-	bodyout = CurBlk;
-	exit = newblk();
-	
-	linkb(entry, header);
-	linkb(header, exit);
-	linkb(header, bodyin);
-	linkb(bodyout, header);
-}
-
-static void
-pifelse(P *ctx)
-{
-	Expr cond;
-	uint entry, exit;
-	uint truein, trueout;
-	uint falsein, falseout;
-	
-	entry = CurBlk;
-	skip(ctx, KIF);
-	
-	skip(ctx, '(');
-	cond = pexpr(ctx, 0);
-	skip(ctx, ')');
-	cccjmp(torval(cond));
-
-	truein = newblk();
-	pstmt(ctx);
-	trueout = CurBlk;
-
-	if (ctx->tok.kind == KELSE) {
-		ADV(ctx);
-
-		falsein = newblk();
-		pstmt(ctx);
-		falseout = CurBlk;
-		exit = newblk();
-
-		linkb(entry, falsein);
-		linkb(entry, truein);
-		linkb(falseout, exit);
-		linkb(trueout,  exit);
-	} else {
-		exit = newblk();
-
-		linkb(entry, exit);
-		linkb(entry, truein);
-		linkb(trueout, exit);
-	}
-}
-#endif
-
 static void
 pblock(P *ctx)
 {
@@ -433,10 +223,8 @@ static void
 pstmt(P *ctx)
 {
 	switch (ctx->tok.kind) {
-	case KDO:    pdowhile(ctx); break;
-	//case KWHILE: pwhile(ctx);   break;
-	//case KIF:    pifelse(ctx);  break;
-	case '{':    pblock(ctx);   break;
+	case KDO: pdowhile(ctx); break;
+	case '{': pblock(ctx);   break;
 	default:
 		if (!pdecl(ctx)) {
 			pexpr(ctx, 0);
