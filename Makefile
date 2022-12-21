@@ -13,12 +13,12 @@ clean:
 	rm -f dawn
 
 dawn: dawn.o util.o error.o lex.o parse.o scope.o
-	$(LD) $(LDFLAGS) $< -o $@
+	$(LD) $(LDFLAGS) $^ -o $@
 
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-dawn.o: dawn.h
+dawn.o: util.h dawn.h syntax.h
 util.o: util.h
 error.o: util.h syntax.h
 lex.o: util.h syntax.h

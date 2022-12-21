@@ -8,8 +8,11 @@
 int
 main(int argc, char **argv)
 {
-	(void)argc, (void)argv;
-	printf("hi\n");
+	Lexer  lexer;
+	Parser parser;
+	initlex(&lexer, "stdin", stdin);
+	parser.lexer = &lexer;
+	parse(&parser);
 	return 0;
 }
 

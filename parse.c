@@ -192,7 +192,7 @@ static void
 pstmt(P *ctx)
 {
 	switch (ctx->token.kind) {
-	case '{': pblock(ctx);   break;
+	case '{': pblock(ctx); break;
 	default:
 		pexpr(ctx, 0);
 		skip(ctx, ';');
