@@ -42,7 +42,7 @@ cover_binop(struct ast_binop *binop)
 		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
 		tile->opnum = OPNO_ADD;
 		if (cover_immed(binop->rhs, tile)) {
-			tile->opclass = OPCL_ARITH_RI;
+			tile->opclass = OPCL_ARITH_MI;
 			tile->arity = 1;
 			tile->operands[0] = cover(binop->lhs);
 		} else {
@@ -56,7 +56,7 @@ cover_binop(struct ast_binop *binop)
 		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
 		tile->opnum = OPNO_SUB;
 		if (cover_immed(binop->rhs, tile)) {
-			tile->opclass = OPCL_ARITH_RI;
+			tile->opclass = OPCL_ARITH_MI;
 			tile->arity = 1;
 			tile->operands[0] = cover(binop->lhs);
 		} else {

@@ -63,9 +63,14 @@ struct tile {
 };
 
 #define OPCL_ARITH_RM	0x03
-#define OPCL_ARITH_RI	0x81
+#define OPCL_ARITH_MI	0x81
+#define OPCL_SHIFT_MC	0xD3
+#define OPCL_SHIFT_MI	0xC1
 #define OPCL_MOV_EI	0xB8
 
 #define OPNO_ADD	0x00
 #define OPNO_SUB	0x05
+#define OPNO_SHL	0x04
+#define OPNO_SHR	0x05
+#define OPNO_SAR	0x07
 

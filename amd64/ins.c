@@ -69,7 +69,8 @@ emit_rec(struct tile *tile, int nextreg, void *stream)
 		ins.reg = regs[0];
 		ins.rm  = regs[1];
 		break;
-	case OPCL_ARITH_RI:
+
+	case OPCL_ARITH_MI:
 		if (tile->immed <= SCHAR_MAX && tile->immed >= SCHAR_MIN) {
 			ins.small_immed = true;
 		}
@@ -81,6 +82,26 @@ emit_rec(struct tile *tile, int nextreg, void *stream)
 		ins.rm  = regs[0];
 		ins.immed = tile->immed;
 		break;
+
+	case OPCL_SHIFT_MC:
+		ins.opcode = 0xD3;
+		ins.has_modrm = true;
+		ins.mod = MOD_REG;
+		ins.reg = tile->opnum;
+		ins.rm  = regs[0];
+		break;
+
+	case OPCL_SHIFT_MI:
+		ins.opcode = 0xC1;
+		ins.has_modrm = true;
+		ins.has_immed = true;
+		ins.small_immed = true;
+		ins.mod = MOD_REG;
+		ins.reg = tile->opnum;
+		ins.rm  = regs[0];
+		ins.immed = tile->immed;
+		break;
+
 	case OPCL_MOV_EI:
 		ins.opcode = 0xB8 + regs[0];
 		ins.has_immed = true;
