@@ -8,10 +8,8 @@
 int
 main(int argc, char **argv)
 {
-	Lexer  lexer;
 	Parser parser;
-	initlex(&lexer, "stdin", stdin);
-	parser.lexer = &lexer;
+	initlex(&parser, "stdin", stdin);
 	parse(&parser);
 	return 0;
 }

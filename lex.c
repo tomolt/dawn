@@ -7,10 +7,10 @@
 
 #define ADV(ctx) ++(ctx)->nextcol, (ctx)->c = fgetc((ctx)->stream)
 
-typedef struct Lexer L;
+typedef struct Parser P;
 
 static void
-lexbcom(L *ctx)
+lexbcom(P *ctx)
 {
 	char chr, prev = ' ';
 	for (;;) {
@@ -26,13 +26,13 @@ lexbcom(L *ctx)
 }
 
 static int
-atnum(L *ctx)
+atnum(P *ctx)
 {
 	return ctx->c >= '0' && ctx->c <= '9';
 }
 
 static int
-lexnum(L *ctx)
+lexnum(P *ctx)
 {
 	long long num = 0;
 	do {
@@ -45,7 +45,7 @@ lexnum(L *ctx)
 }
 
 static int
-atsym(L *ctx)
+atsym(P *ctx)
 {
 	return (ctx->c >= 'a' && ctx->c <= 'z')
 		|| (ctx->c >= 'A' && ctx->c <= 'Z')
@@ -54,7 +54,7 @@ atsym(L *ctx)
 }
 
 static int
-lexsym(L *ctx)
+lexsym(P *ctx)
 {
 	char *sym = ctx->symbuf;
 	int len = 0;
@@ -84,7 +84,7 @@ lexsym(L *ctx)
 }
 
 static int
-yylex(L *ctx)
+yylex(P *ctx)
 {
 	char f;
 	for (;;) {
@@ -192,14 +192,14 @@ yylex(L *ctx)
 }
 
 Token
-lextok(L *ctx)
+lextok(P *ctx)
 {
 	ctx->token.kind = yylex(ctx);
 	return ctx->token;
 }
 
 void
-initlex(L *ctx, char *path, void *file)
+initlex(P *ctx, char *path, void *file)
 {
 	ctx->stream = file;
 	ctx->curfile = path;

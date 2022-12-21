@@ -5,7 +5,7 @@
 #include "syntax.h"
 #include "ast.h"
 
-#define ADV(ctx) (ctx)->token = lextok((ctx)->lexer)
+#define ADV(ctx) lextok(ctx)
 
 #define CNONE   0
 #define CNUM    1
