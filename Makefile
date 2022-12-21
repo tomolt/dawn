@@ -10,6 +10,7 @@ all: dawn
 
 clean:
 	rm -f *.o
+	rm -f amd64/*.o
 	rm -f dawn
 
 dawn: dawn.o util.o error.o lex.o parse.o scope.o amd64/ins.o amd64/cover.o

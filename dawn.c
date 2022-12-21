@@ -6,10 +6,10 @@
 #include "syntax.h"
 #include "ast.h"
 
-struct ins;
+struct tile;
 
-extern struct ins *cover(EXPR expr);
-extern void emit(struct ins *ins, void *stream);
+extern struct tile *cover(EXPR expr);
+extern void emit(struct tile *tile, void *stream);
 
 int
 main(int argc, char **argv)
@@ -18,8 +18,8 @@ main(int argc, char **argv)
 	Parser parser;
 	initlex(&parser, "stdin", stdin);
 	EXPR expr = parse(&parser);
-	struct ins *ins = cover(expr);
-	emit(ins, stdout);
+	struct tile *tile = cover(expr);
+	emit(tile, stdout);
 	return 0;
 }
 

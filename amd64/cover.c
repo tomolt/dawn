@@ -4,40 +4,28 @@
 #include "../ast.h"
 #include "ins.h"
 
-struct ins *cover(EXPR expr);
+struct tile *cover(EXPR expr);
 
-static struct ins *
+static struct tile *
 cover_literal(struct ast_literal *literal)
 {
-	struct ins *ins = calloc(1, sizeof *ins);
-	ins->opcode = OPC_MOV_RI;
-	ins->embedded_reg = true;
-	ins->has_immed = true;
-	ins->immed = literal->value;
-	return ins;
-}
-
-static void
-cover_modrm(EXPR expr, struct ins *ins)
-{
-	ins->has_modrm = true;
-	ins->mod = MOD_REG;
-	ins->rm = ins->arity++;
-	ins->operands[ins->rm] = cover(expr);
+	struct tile *tile = calloc(1, sizeof *tile);
+	tile->opclass = OPCL_MOV_EI;
+	tile->immed = literal->value;
+	return tile;
 }
 
 static bool
-cover_immed(EXPR expr, struct ins *ins)
+cover_immed(EXPR expr, struct tile *tile)
 {
 	if (EXPR_KIND(expr) != EXPR_LITERAL) {
 		return false;
 	}
-	ins->has_immed = true;
-	ins->immed = ((struct ast_literal *)expr)->value;
+	tile->immed = ((struct ast_literal *)expr)->value;
 	return true;
 }
 
-static struct ins *
+static struct tile *
 cover_unop(struct ast_unop *unop)
 {
 	switch (unop->op) {
@@ -45,52 +33,44 @@ cover_unop(struct ast_unop *unop)
 	}
 }
 
-static struct ins *
+static struct tile *
 cover_binop(struct ast_binop *binop)
 {
-	struct ins *ins;
+	struct tile *tile;
 	switch (binop->op) {
 	case '+':
-		ins = calloc(1, sizeof *ins + 2 * sizeof(struct ins *));
-		if (cover_immed(binop->rhs, ins)) {
-			ins->opcode = OPC_ADD_RI;
-			ins->reg = 0; // add
-			ins->has_modrm = true;
-			ins->mod = MOD_REG;
-			ins->rm = 0;
-			ins->arity = 1;
-			ins->operands[0] = cover(binop->lhs);
+		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
+		tile->opnum = OPNO_ADD;
+		if (cover_immed(binop->rhs, tile)) {
+			tile->opclass = OPCL_ARITH_RI;
+			tile->arity = 1;
+			tile->operands[0] = cover(binop->lhs);
 		} else {
-			ins->opcode = OPC_ADD_RM;
-			ins->reg = 0;
-			ins->arity = 1;
-			ins->operands[0] = cover(binop->lhs);
-			cover_modrm(binop->rhs, ins);
+			tile->opclass = OPCL_ARITH_RM;
+			tile->arity = 2;
+			tile->operands[0] = cover(binop->lhs);
+			tile->operands[1] = cover(binop->rhs);
 		}
-		return ins;
+		return tile;
 	case '-':
-		ins = calloc(1, sizeof *ins + 2 * sizeof(struct ins *));
-		if (cover_immed(binop->rhs, ins)) {
-			ins->opcode = OPC_SUB_RI;
-			ins->reg = 5; // sub
-			ins->has_modrm = true;
-			ins->mod = MOD_REG;
-			ins->rm = 0;
-			ins->arity = 1;
-			ins->operands[0] = cover(binop->lhs);
+		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
+		tile->opnum = OPNO_SUB;
+		if (cover_immed(binop->rhs, tile)) {
+			tile->opclass = OPCL_ARITH_RI;
+			tile->arity = 1;
+			tile->operands[0] = cover(binop->lhs);
 		} else {
-			ins->opcode = OPC_SUB_RM;
-			ins->reg = 0;
-			ins->arity = 1;
-			ins->operands[0] = cover(binop->lhs);
-			cover_modrm(binop->rhs, ins);
+			tile->opclass = OPCL_ARITH_RM;
+			tile->arity = 2;
+			tile->operands[0] = cover(binop->lhs);
+			tile->operands[1] = cover(binop->rhs);
 		}
-		return ins;
+		return tile;
 	default: return NULL;
 	}
 }
 
-struct ins *
+struct tile *
 cover(EXPR expr)
 {
 	switch (EXPR_KIND(expr)) {

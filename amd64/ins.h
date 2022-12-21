@@ -33,7 +33,6 @@ struct ins {
 	bool has_modrm;
 	bool has_immed;
 	bool small_immed;
-	bool embedded_reg;
 
 	uint8_t mod;
 	uint8_t reg;
@@ -43,11 +42,8 @@ struct ins {
 	uint8_t index;
 	uint8_t scale;
 
-	uint64_t disp;
-	uint64_t immed;
-
-	int arity;
-	struct ins *operands[];
+	int64_t disp;
+	int64_t immed;
 };
 
 #define OPC_MOV_RI	0xB8
@@ -55,4 +51,21 @@ struct ins {
 #define OPC_ADD_RI	0x81
 #define OPC_SUB_RM	0x2B
 #define OPC_SUB_RI	0x81
+
+struct tile {
+	int opclass;
+	int opnum;
+
+	int64_t immed;
+
+	int arity;
+	struct tile *operands[];
+};
+
+#define OPCL_ARITH_RM	0x03
+#define OPCL_ARITH_RI	0x81
+#define OPCL_MOV_EI	0xB8
+
+#define OPNO_ADD	0x00
+#define OPNO_SUB	0x05
 
