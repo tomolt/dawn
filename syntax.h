@@ -60,7 +60,7 @@ void error(SLoc, const char *, ...);
 
 Token lextok(Parser *);
 void initlex(Parser *, char *, void *);
-void parse(Parser *);
+void *parse(Parser *);
 
 void addbinding(const char *, uint);
 uint lookup(const char *);

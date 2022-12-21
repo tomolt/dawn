@@ -199,7 +199,7 @@ pstmt(P *ctx)
 	}
 }
 
-void
+void *
 parse(P *ctx)
 {
 	uint scope = getscope();

@@ -1,6 +1,6 @@
 typedef void *EXPR;
 
-#define EXPR_KIND(expr) ((int)(expr)->kind)
+#define EXPR_KIND(expr) (*(int *)(expr))
 
 enum {
 	EXPR_LITERAL,

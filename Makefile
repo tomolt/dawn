@@ -18,7 +18,7 @@ dawn: dawn.o util.o error.o lex.o parse.o scope.o amd64/ins.o amd64/cover.o
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-dawn.o: util.h dawn.h syntax.h
+dawn.o: util.h dawn.h syntax.h ast.h
 util.o: util.h
 error.o: util.h syntax.h
 lex.o: util.h syntax.h
