@@ -9,7 +9,7 @@
 struct ins;
 
 extern struct ins *cover(EXPR expr);
-extern void emit(const struct ins *ins, void *stream);
+extern void emit(struct ins *ins, void *stream);
 
 int
 main(int argc, char **argv)

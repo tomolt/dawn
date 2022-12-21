@@ -33,6 +33,7 @@ struct ins {
 	bool has_modrm;
 	bool has_immed;
 	bool small_immed;
+	bool embedded_reg;
 
 	uint8_t mod;
 	uint8_t reg;

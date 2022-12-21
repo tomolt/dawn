@@ -10,7 +10,8 @@ static struct ins *
 cover_literal(struct ast_literal *literal)
 {
 	struct ins *ins = calloc(1, sizeof *ins);
-	ins->opcode = OPC_MOV_RI + REG_AX;
+	ins->opcode = OPC_MOV_RI;
+	ins->embedded_reg = true;
 	ins->has_immed = true;
 	ins->immed = literal->value;
 	return ins;
@@ -34,6 +35,8 @@ cover_binop(struct ast_binop *binop)
 		ins->opcode = OPC_ADD_RR;
 		ins->has_modrm = true;
 		ins->mod = MOD_REG;
+		ins->rm  = 0;
+		ins->reg = 1;
 		ins->arity = 2;
 		ins->operands[0] = cover(binop->lhs);
 		ins->operands[1] = cover(binop->rhs);
@@ -43,6 +46,8 @@ cover_binop(struct ast_binop *binop)
 		ins->opcode = OPC_SUB_RR;
 		ins->has_modrm = true;
 		ins->mod = MOD_REG;
+		ins->rm  = 0;
+		ins->reg = 1;
 		ins->arity = 2;
 		ins->operands[0] = cover(binop->lhs);
 		ins->operands[1] = cover(binop->rhs);

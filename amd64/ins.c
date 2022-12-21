@@ -4,6 +4,10 @@
 #include "../util.h"
 #include "ins.h"
 
+static const int avail_registers[] = {
+	0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+};
+
 static void
 emit_prefixes(uint16_t prefixes, uint8_t **O)
 {
@@ -45,14 +49,40 @@ emit_ins(const struct ins *ins, uint8_t **O)
 	}
 }
 
-void
-emit(const struct ins *ins, void *stream)
+static int
+emit_rec(struct ins *ins, int nextreg, void *stream)
 {
+	int regs[16];
+
 	for (int i = 0; i < ins->arity; i++) {
-		emit(ins->operands[i], stream);
+		regs[i] = emit_rec(ins->operands[i], nextreg + i, stream);
 	}
+	regs[ins->arity] = avail_registers[nextreg];
+
+	if (ins->embedded_reg) {
+		ins->opcode += regs[ins->reg];
+	}
+
+	if (INS_HAS_MODRM(ins)) {
+		ins->reg = regs[ins->reg];
+		ins->rm  = regs[ins->rm];
+	}
+
+	if (INS_HAS_SIB(ins)) {
+		ins->index = regs[ins->index];
+		ins->base  = regs[ins->base];
+	}
+
 	uint8_t buf[32], *ptr = buf;
 	emit_ins(ins, &ptr);
 	fwrite(buf, ptr - buf, 1, stream);
+
+	return regs[ins->arity];
+}
+
+void
+emit(struct ins *ins, void *stream)
+{
+	emit_rec(ins, 0, stream);
 }
 
