@@ -3,10 +3,9 @@
 #endif
 #define SYNTAX_H
 
-typedef struct SLoc  SLoc;
-typedef struct Token Token;
-typedef struct Lexer Lexer;
-typedef struct MExpander MExpander;
+typedef struct SLoc   SLoc;
+typedef struct Token  Token;
+typedef struct Lexer  Lexer;
 typedef struct Parser Parser;
 
 /* All named tokens have to be in the ranges [1,32], [48,57], [65,90], or [97,122]
@@ -58,16 +57,12 @@ struct Lexer {
 	size_t nextrow;
 	size_t nextcol;
 	char   symbuf[100];
-	Token  yylval;
-};
-
-struct MExpander {
-	Lexer *lex;
+	Token  token;
 };
 
 struct Parser {
-	MExpander *mx;
-	Token tok;
+	Lexer *lexer;
+	Token token;
 };
 
 const char *fmttok(Token);
@@ -75,7 +70,6 @@ void cerror(const char *, ...);
 void error(SLoc, const char *, ...);
 
 Token lextok(Lexer *);
-Token mxnexttok(MExpander *);
 void initlex(Lexer *, char *, void *);
 void parse(Parser *);
 

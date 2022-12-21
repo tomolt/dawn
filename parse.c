@@ -4,7 +4,7 @@
 #include "util.h"
 #include "syntax.h"
 
-#define ADV(ctx) (ctx)->tok = mxnexttok((ctx)->mx)
+#define ADV(ctx) (ctx)->token = lextok((ctx)->lexer)
 
 #define CNONE   0
 #define CNUM    1
@@ -84,8 +84,8 @@ static void pblock(P *);
 static void
 skip(P *ctx, int kind)
 {
-	if (ctx->tok.kind != kind) {
-		error(ctx->tok.sloc, "Unexpected %s.", fmttok(ctx->tok));
+	if (ctx->token.kind != kind) {
+		error(ctx->token.sloc, "Unexpected %s.", fmttok(ctx->token));
 	}
 	ADV(ctx);
 }
@@ -94,20 +94,20 @@ static Expr
 pexpr(P *ctx, int minbp)
 {
 	Expr  expr;
-	Token tok;
+	Token token;
 
-	switch (Nuds[ctx->tok.kind].code) {
+	switch (Nuds[ctx->token.kind].code) {
 	case CNONE:
-		error(ctx->tok.sloc, "%s is not an expression.", fmttok(ctx->tok));
+		error(ctx->token.sloc, "%s is not an expression.", fmttok(ctx->token));
 		break;
 
 	case CNUM:
-		expr = ccliteral(ctx->tok.num);
+		expr = ccliteral(ctx->token.num);
 		ADV(ctx);
 		break;
 
 	case CVAR:
-		expr = ccsymbol(ctx->tok.sym);
+		expr = ccsymbol(ctx->token.sym);
 		ADV(ctx);
 		break;
 
@@ -118,91 +118,29 @@ pexpr(P *ctx, int minbp)
 		break;
 
 	case CPREFIX:
-		tok = ctx->tok;
+		token = ctx->token;
 		ADV(ctx);
-		expr = ccunop(tok, pexpr(ctx, PREFIXPREC));
+		expr = ccunop(token, pexpr(ctx, PREFIXPREC));
 		break;
 	}
 
-	while (Leds[ctx->tok.kind].bp > minbp) {
-		switch (Leds[ctx->tok.kind].code) {
+	while (Leds[ctx->token.kind].bp > minbp) {
+		switch (Leds[ctx->token.kind].code) {
 		case CLEFTASSOC:
-			tok = ctx->tok;
+			token = ctx->token;
 			ADV(ctx);
-			expr = ccinfix(tok, expr, pexpr(ctx, Leds[tok.kind].bp));
+			expr = ccinfix(token, expr, pexpr(ctx, Leds[token.kind].bp));
 			break;
 
 		case CRIGHTASSOC:
-			tok = ctx->tok;
+			token = ctx->token;
 			ADV(ctx);
-			expr = ccinfix(tok, expr, pexpr(ctx, Leds[tok.kind].bp-1));
+			expr = ccinfix(token, expr, pexpr(ctx, Leds[token.kind].bp-1));
 			break;
 		}
 	}
 
 	return expr;
-}
-
-static bool
-pdecl(P *ctx)
-{
-	Type *base;
-	Dtor dtor;
-
-	base = pbase(ctx);
-	if (!base) return false;
-	
-	dtor = pdtor(ctx, base);
-	
-	if (ctx->tok.kind == '{') {
-		if (dtor.type->kind != TFUNC) error(ctx->tok.sloc, "Non-function declaration followed by code block.");
-		if (CurProc != NO_PROC) error(ctx->tok.sloc, "You cannot nest function definitions.");
-		newproc(dtor.sym);
-		pblock(ctx);
-		CurProc = NO_PROC;
-		return true;
-	} else {
-		ccdecl(dtor.sym, dtor.type);
-
-		if (ctx->tok.kind == '=') {
-			ADV(ctx);
-			pexpr(ctx, 1);
-		}
-		
-		while (ctx->tok.kind == ',') {
-			ADV(ctx);
-			dtor = pdtor(ctx, base);
-			ccdecl(dtor.sym, dtor.type);
-			if (ctx->tok.kind == '=') {
-				ADV(ctx);
-				pexpr(ctx, 1);
-			}
-		}
-
-		skip(ctx, ';');
-		return true;
-	}
-}
-
-static void
-pdowhile(P *ctx)
-{
-	Expr cond;
-	uint bodyin;
-	
-	bodyin = newlabel();
-
-	skip(ctx, KDO);
-	
-	putins(INS_DI(ANCHOR, 0, NO_VAR, bodyin));
-	pstmt(ctx);
-
-	skip(ctx, KWHILE);
-	skip(ctx, '(');
-	cond = pexpr(ctx, 0);
-	cccjmp(torval(cond), bodyin);
-	skip(ctx, ')');
-	skip(ctx, ';');
 }
 
 static void
@@ -211,8 +149,8 @@ pblock(P *ctx)
 	uint scope;
 	skip(ctx, '{');
 	scope = getscope();
-	while (ctx->tok.kind != '}') {
-		if (!ctx->tok.kind) error(ctx->tok.sloc, "Unclosed braces.");
+	while (ctx->token.kind != '}') {
+		if (!ctx->token.kind) error(ctx->token.sloc, "Unclosed braces.");
 		pstmt(ctx);
 	}
 	ADV(ctx);
@@ -222,14 +160,11 @@ pblock(P *ctx)
 static void
 pstmt(P *ctx)
 {
-	switch (ctx->tok.kind) {
-	case KDO: pdowhile(ctx); break;
+	switch (ctx->token.kind) {
 	case '{': pblock(ctx);   break;
 	default:
-		if (!pdecl(ctx)) {
-			pexpr(ctx, 0);
-			skip(ctx, ';');
-		}
+		pexpr(ctx, 0);
+		skip(ctx, ';');
 	}
 }
 
@@ -238,13 +173,10 @@ parse(P *ctx)
 {
 	uint scope;
 	
-	CurProc = NO_PROC;
 	scope = getscope();
 	ADV(ctx);
-	while (ctx->tok.kind) {
-		if (!pdecl(ctx)) {
-			error(ctx->tok.sloc, "The top level must consist purely of declarations/definitions.");
-		}
+	while (ctx->token.kind) {
+		pstmt(ctx);
 	}
 	resetscope(scope);
 }

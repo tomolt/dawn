@@ -12,7 +12,7 @@ clean:
 	rm -f *.o
 	rm -f dawn
 
-dawn: dawn.o util.o error.o lex.o
+dawn: dawn.o util.o error.o lex.o parse.o scope.o
 	$(LD) $(LDFLAGS) $< -o $@
 
 .c.o:
@@ -21,4 +21,5 @@ dawn: dawn.o util.o error.o lex.o
 dawn.o: dawn.h
 util.o: util.h
 lex.o: util.h syntax.h
-
+parse.o: util.h syntax.h
+scope.o: util.h syntax.h

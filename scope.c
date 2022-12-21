@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "util.h"
-#include "lang.h"
 #include "syntax.h"
 
 #define MAXBINDINGS 200

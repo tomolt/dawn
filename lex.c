@@ -40,7 +40,7 @@ lexnum(L *ctx)
 		num += ctx->c - '0';
 		ADV(ctx);
 	} while (atnum(ctx));
-	ctx->yylval.num = num;
+	ctx->token.num = num;
 	return LITERAL;
 }
 
@@ -68,44 +68,18 @@ lexsym(L *ctx)
 	while (atsym(ctx)) ADV(ctx);
 
 	switch (sym[0]) {
-	case 'c':
-		if (!strcmp(sym, "char"))  return KCHAR;
-		if (!strcmp(sym, "const")) return KCONST;
-		break;
-	case 'd':
-		if (!strcmp(sym, "do")) return KDO;
-		if (!strcmp(sym, "double")) return KDOUBLE;
-		break;
 	case 'e':
 		if (!strcmp(sym, "else")) return KELSE;
 		break;
-	case 'f':
-		if (!strcmp(sym, "float")) return KFLOAT;
-		break;
 	case 'i':
 		if (!strcmp(sym, "if"))  return KIF;
-		if (!strcmp(sym, "int")) return KINT;
-		break;
-	case 'l':
-		if (!strcmp(sym, "long")) return KLONG;
-		break;
-	case 's':
-		if (!strcmp(sym, "short"))  return KSHORT;
-		if (!strcmp(sym, "signed")) return KSIGNED;
-		break;
-	case 'u':
-		if (!strcmp(sym, "unsigned")) return KUNSIGNED;
-		break;
-	case 'v':
-		if (!strcmp(sym, "void")) return KVOID;
-		if (!strcmp(sym, "volatile")) return KVOLATILE;
 		break;
 	case 'w':
 		if (!strcmp(sym, "while")) return KWHILE;
 		break;
 	}
 	
-	ctx->yylval.sym = sym;
+	ctx->token.sym = sym;
 	return SYMBOL;
 }
 
@@ -114,9 +88,9 @@ yylex(L *ctx)
 {
 	char f;
 	for (;;) {
-		ctx->yylval.sloc.file = ctx->curfile;
-		ctx->yylval.sloc.row  = ctx->nextrow;
-		ctx->yylval.sloc.col  = ctx->nextcol;
+		ctx->token.sloc.file = ctx->curfile;
+		ctx->token.sloc.row  = ctx->nextrow;
+		ctx->token.sloc.col  = ctx->nextcol;
 		
 		switch (ctx->c) {
 		
@@ -220,8 +194,8 @@ yylex(L *ctx)
 Token
 lextok(L *ctx)
 {
-	ctx->yylval.kind = yylex(ctx);
-	return ctx->yylval;
+	ctx->token.kind = yylex(ctx);
+	return ctx->token;
 }
 
 void
