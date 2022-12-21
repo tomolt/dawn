@@ -51,6 +51,8 @@ struct ins {
 };
 
 #define OPC_MOV_RI	0xB8
-#define OPC_ADD_RR	0x01
-#define OPC_SUB_RR	0x29
+#define OPC_ADD_RM	0x03
+#define OPC_ADD_RI	0x81
+#define OPC_SUB_RM	0x2B
+#define OPC_SUB_RI	0x81
 

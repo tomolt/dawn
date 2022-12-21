@@ -17,6 +17,26 @@ cover_literal(struct ast_literal *literal)
 	return ins;
 }
 
+static void
+cover_modrm(EXPR expr, struct ins *ins)
+{
+	ins->has_modrm = true;
+	ins->mod = MOD_REG;
+	ins->rm = ins->arity++;
+	ins->operands[ins->rm] = cover(expr);
+}
+
+static bool
+cover_immed(EXPR expr, struct ins *ins)
+{
+	if (EXPR_KIND(expr) != EXPR_LITERAL) {
+		return false;
+	}
+	ins->has_immed = true;
+	ins->immed = ((struct ast_literal *)expr)->value;
+	return true;
+}
+
 static struct ins *
 cover_unop(struct ast_unop *unop)
 {
@@ -32,25 +52,39 @@ cover_binop(struct ast_binop *binop)
 	switch (binop->op) {
 	case '+':
 		ins = calloc(1, sizeof *ins + 2 * sizeof(struct ins *));
-		ins->opcode = OPC_ADD_RR;
-		ins->has_modrm = true;
-		ins->mod = MOD_REG;
-		ins->rm  = 0;
-		ins->reg = 1;
-		ins->arity = 2;
-		ins->operands[0] = cover(binop->lhs);
-		ins->operands[1] = cover(binop->rhs);
+		if (cover_immed(binop->rhs, ins)) {
+			ins->opcode = OPC_ADD_RI;
+			ins->reg = 0; // add
+			ins->has_modrm = true;
+			ins->mod = MOD_REG;
+			ins->rm = 0;
+			ins->arity = 1;
+			ins->operands[0] = cover(binop->lhs);
+		} else {
+			ins->opcode = OPC_ADD_RM;
+			ins->reg = 0;
+			ins->arity = 1;
+			ins->operands[0] = cover(binop->lhs);
+			cover_modrm(binop->rhs, ins);
+		}
 		return ins;
 	case '-':
 		ins = calloc(1, sizeof *ins + 2 * sizeof(struct ins *));
-		ins->opcode = OPC_SUB_RR;
-		ins->has_modrm = true;
-		ins->mod = MOD_REG;
-		ins->rm  = 0;
-		ins->reg = 1;
-		ins->arity = 2;
-		ins->operands[0] = cover(binop->lhs);
-		ins->operands[1] = cover(binop->rhs);
+		if (cover_immed(binop->rhs, ins)) {
+			ins->opcode = OPC_SUB_RI;
+			ins->reg = 5; // sub
+			ins->has_modrm = true;
+			ins->mod = MOD_REG;
+			ins->rm = 0;
+			ins->arity = 1;
+			ins->operands[0] = cover(binop->lhs);
+		} else {
+			ins->opcode = OPC_SUB_RM;
+			ins->reg = 0;
+			ins->arity = 1;
+			ins->operands[0] = cover(binop->lhs);
+			cover_modrm(binop->rhs, ins);
+		}
 		return ins;
 	default: return NULL;
 	}

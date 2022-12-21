@@ -64,7 +64,9 @@ emit_rec(struct ins *ins, int nextreg, void *stream)
 	}
 
 	if (INS_HAS_MODRM(ins)) {
-		ins->reg = regs[ins->reg];
+		if (ins->opcode != 0x81) {
+			ins->reg = regs[ins->reg];
+		}
 		ins->rm  = regs[ins->rm];
 	}
 
