@@ -79,8 +79,8 @@ static Led Leds[NUMTOKS] = {
 	[',']     = {  1, CRIGHTASSOC },
 };
 
-static void pstmt(P *);
-static void pblock(P *);
+//static void pstmt(P *);
+//static void pblock(P *);
 
 static EXPR
 newliteral(int64_t value)
@@ -174,6 +174,7 @@ pexpr(P *ctx, int minbp)
 	return expr;
 }
 
+#if 0
 static void
 pblock(P *ctx)
 {
@@ -198,15 +199,21 @@ pstmt(P *ctx)
 		skip(ctx, ';');
 	}
 }
+#endif
 
 void *
 parse(P *ctx)
 {
+#if 0
 	uint scope = getscope();
 	ADV(ctx);
 	while (ctx->token.kind) {
 		pstmt(ctx);
 	}
 	resetscope(scope);
+#endif
+	ADV(ctx);
+	EXPR expr = pexpr(ctx, 0);
+	return expr;
 }
 

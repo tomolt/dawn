@@ -9,6 +9,7 @@
 struct ins;
 
 extern struct ins *cover(EXPR expr);
+extern void emit(const struct ins *ins, void *stream);
 
 int
 main(int argc, char **argv)
@@ -16,7 +17,9 @@ main(int argc, char **argv)
 	(void)argc, (void)argv;
 	Parser parser;
 	initlex(&parser, "stdin", stdin);
-	parse(&parser);
+	EXPR expr = parse(&parser);
+	struct ins *ins = cover(expr);
+	emit(ins, stdout);
 	return 0;
 }
 

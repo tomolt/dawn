@@ -49,8 +49,6 @@ struct ins {
 	struct ins *operands[];
 };
 
-int emit(const struct ins *ins, uint8_t **O);
-
 #define OPC_MOV_RI	0xB8
 #define OPC_ADD_RR	0x01
 #define OPC_SUB_RR	0x29

@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 
 #include "../util.h"
 #include "ins.h"
@@ -25,8 +26,8 @@ emit_immed(int64_t immed, int width, uint8_t **O)
 	}
 }
 
-int
-emit(const struct ins *ins, uint8_t **O)
+static void
+emit_ins(const struct ins *ins, uint8_t **O)
 {
 	if (ins->prefixes) emit_prefixes(ins->prefixes, O);
 	*(*O)++ = ins->opcode;
@@ -42,6 +43,16 @@ emit(const struct ins *ins, uint8_t **O)
 	if (INS_HAS_IMMED(ins)) {
 		emit_immed(ins->immed, INS_IMMED_WIDTH(ins), O);
 	}
-	return 0;
+}
+
+void
+emit(const struct ins *ins, void *stream)
+{
+	for (int i = 0; i < ins->arity; i++) {
+		emit(ins->operands[i], stream);
+	}
+	uint8_t buf[32], *ptr = buf;
+	emit_ins(ins, &ptr);
+	fwrite(buf, ptr - buf, 1, stream);
 }
 
