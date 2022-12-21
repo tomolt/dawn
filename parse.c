@@ -3,6 +3,7 @@
 
 #include "util.h"
 #include "syntax.h"
+#include "ast.h"
 
 #define ADV(ctx) (ctx)->token = lextok((ctx)->lexer)
 
@@ -81,6 +82,36 @@ static Led Leds[NUMTOKS] = {
 static void pstmt(P *);
 static void pblock(P *);
 
+static EXPR
+newliteral(int64_t value)
+{
+	struct ast_literal *expr = calloc(1, sizeof *expr);
+	expr->kind  = EXPR_LITERAL;
+	expr->value = value;
+	return expr;
+}
+
+static EXPR
+newunop(int op, EXPR arg)
+{
+	struct ast_unop *expr = calloc(1, sizeof *expr);
+	expr->kind = EXPR_UNOP;
+	expr->op   = op;
+	expr->arg  = arg;
+	return expr;
+}
+
+static EXPR
+newbinop(int op, EXPR lhs, EXPR rhs)
+{
+	struct ast_binop *expr = calloc(1, sizeof *expr);
+	expr->kind = EXPR_BINOP;
+	expr->op   = op;
+	expr->lhs  = lhs;
+	expr->rhs  = rhs;
+	return expr;
+}
+
 static void
 skip(P *ctx, int kind)
 {
@@ -90,10 +121,10 @@ skip(P *ctx, int kind)
 	ADV(ctx);
 }
 
-static Expr
+static EXPR
 pexpr(P *ctx, int minbp)
 {
-	Expr  expr;
+	EXPR  expr;
 	Token token;
 
 	switch (Nuds[ctx->token.kind].code) {
@@ -102,14 +133,14 @@ pexpr(P *ctx, int minbp)
 		break;
 
 	case CNUM:
-		expr = ccliteral(ctx->token.num);
+		expr = newliteral(ctx->token.num);
 		ADV(ctx);
 		break;
 
-	case CVAR:
+	/*case CVAR:
 		expr = ccsymbol(ctx->token.sym);
 		ADV(ctx);
-		break;
+		break;*/
 
 	case CPAREN:
 		ADV(ctx);
@@ -120,7 +151,7 @@ pexpr(P *ctx, int minbp)
 	case CPREFIX:
 		token = ctx->token;
 		ADV(ctx);
-		expr = ccunop(token, pexpr(ctx, PREFIXPREC));
+		expr = newunop(token.kind, pexpr(ctx, PREFIXPREC));
 		break;
 	}
 
@@ -129,13 +160,13 @@ pexpr(P *ctx, int minbp)
 		case CLEFTASSOC:
 			token = ctx->token;
 			ADV(ctx);
-			expr = ccinfix(token, expr, pexpr(ctx, Leds[token.kind].bp));
+			expr = newbinop(token.kind, expr, pexpr(ctx, Leds[token.kind].bp));
 			break;
 
 		case CRIGHTASSOC:
 			token = ctx->token;
 			ADV(ctx);
-			expr = ccinfix(token, expr, pexpr(ctx, Leds[token.kind].bp-1));
+			expr = newbinop(token.kind, expr, pexpr(ctx, Leds[token.kind].bp-1));
 			break;
 		}
 	}
@@ -171,9 +202,7 @@ pstmt(P *ctx)
 void
 parse(P *ctx)
 {
-	uint scope;
-	
-	scope = getscope();
+	uint scope = getscope();
 	ADV(ctx);
 	while (ctx->token.kind) {
 		pstmt(ctx);

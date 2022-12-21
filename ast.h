@@ -1,19 +1,28 @@
-struct atom {
-};
+typedef void *EXPR;
+
+#define EXPR_KIND(expr) ((int)(expr)->kind)
 
 enum {
+	EXPR_LITERAL,
+	EXPR_UNOP,
+	EXPR_BINOP,
 };
 
-struct unop {
-	arg;
+struct ast_literal {
+	int     kind;
+	int64_t value;
 };
 
-struct binop {
-	lhs;
-	rhs;
+struct ast_unop {
+	int  kind;
+	int  op;
+	EXPR arg;
 };
 
-struct expr {
+struct ast_binop {
+	int  kind;
+	int  op;
+	EXPR lhs;
+	EXPR rhs;
 };
-
 

@@ -20,6 +20,7 @@ dawn: dawn.o util.o error.o lex.o parse.o scope.o
 
 dawn.o: dawn.h
 util.o: util.h
+error.o: util.h syntax.h
 lex.o: util.h syntax.h
-parse.o: util.h syntax.h
+parse.o: util.h syntax.h ast.h
 scope.o: util.h syntax.h
