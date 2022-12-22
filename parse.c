@@ -47,22 +47,23 @@ static Nud Nuds[NUMTOKS] = {
 };
 
 static Led Leds[NUMTOKS] = {
-	['*']     = { 13, CLEFTASSOC },
-	['/']     = { 13, CLEFTASSOC },
-	['%']     = { 13, CLEFTASSOC },
-	['+']     = { 12, CLEFTASSOC },
-	['-']     = { 12, CLEFTASSOC },
-	[LT2]     = { 11, CLEFTASSOC },
-	[GT2]     = { 11, CLEFTASSOC },
+	['*']     = { 10, CLEFTASSOC },
+	['/']     = { 10, CLEFTASSOC },
+	['%']     = { 10, CLEFTASSOC },
+	[LT2]     = { 10, CLEFTASSOC },
+	[GT2]     = { 10, CLEFTASSOC },
+	['&']     = { 10, CLEFTASSOC },
+	['+']     = {  8, CLEFTASSOC },
+	['-']     = {  8, CLEFTASSOC },
+	['|']     = {  8, CLEFTASSOC },
+	['^']     = {  8, CLEFTASSOC },
+#if 0
 	['<']     = { 10, CLEFTASSOC },
 	[LTEQ]    = { 10, CLEFTASSOC },
 	['>']     = { 10, CLEFTASSOC },
 	[GTEQ]    = { 10, CLEFTASSOC },
 	[EQ2]     = {  9, CLEFTASSOC },
 	[NOTEQ]   = {  9, CLEFTASSOC },
-	['&']     = {  8, CLEFTASSOC },
-	['^']     = {  7, CLEFTASSOC },
-	['|']     = {  6, CLEFTASSOC },
 	[AND2]    = {  5, CLEFTASSOC },
 	[OR2]     = {  4, CLEFTASSOC },
 	['=']     = {  2, CRIGHTASSOC },
@@ -77,6 +78,7 @@ static Led Leds[NUMTOKS] = {
 	[HATEQ]   = {  2, CRIGHTASSOC },
 	[OREQ]    = {  2, CRIGHTASSOC },
 	[',']     = {  1, CRIGHTASSOC },
+#endif
 };
 
 //static void pstmt(P *);
