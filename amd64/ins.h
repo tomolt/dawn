@@ -46,12 +46,6 @@ struct ins {
 	int64_t immed;
 };
 
-#define OPC_MOV_RI	0xB8
-#define OPC_ADD_RM	0x03
-#define OPC_ADD_RI	0x81
-#define OPC_SUB_RM	0x2B
-#define OPC_SUB_RI	0x81
-
 struct tile {
 	int opclass;
 	int opnum;
@@ -70,6 +64,10 @@ struct tile {
 
 #define OPNO_ADD	0x00
 #define OPNO_SUB	0x05
+#define OPNO_AND	0x04
+#define OPNO_OR		0x01
+#define OPNO_XOR	0x06
+
 #define OPNO_SHL	0x04
 #define OPNO_SHR	0x05
 #define OPNO_SAR	0x07

@@ -39,9 +39,15 @@ cover_binop(struct ast_binop *binop)
 {
 	struct tile *tile;
 	switch (binop->op) {
-	case '+':
+	case '+': case '-': case '&': case '|': case '^':
 		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
-		tile->opnum = OPNO_ADD;
+		switch (binop->op) {
+		case '+': tile->opnum = OPNO_ADD; break;
+		case '-': tile->opnum = OPNO_SUB; break;
+		case '&': tile->opnum = OPNO_AND; break;
+		case '|': tile->opnum = OPNO_OR;  break;
+		case '^': tile->opnum = OPNO_XOR; break;
+		}
 		if (cover_immed(binop->rhs, tile)) {
 			tile->opclass = OPCL_ARITH_MI;
 			tile->arity = 1;
@@ -54,24 +60,12 @@ cover_binop(struct ast_binop *binop)
 		}
 		return tile;
 
-	case '-':
+	case LT2: case GT2:
 		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
-		tile->opnum = OPNO_SUB;
-		if (cover_immed(binop->rhs, tile)) {
-			tile->opclass = OPCL_ARITH_MI;
-			tile->arity = 1;
-			tile->operands[0] = cover(binop->lhs);
-		} else {
-			tile->opclass = OPCL_ARITH_RM;
-			tile->arity = 2;
-			tile->operands[0] = cover(binop->lhs);
-			tile->operands[1] = cover(binop->rhs);
+		switch (binop->op) {
+		case LT2: tile->opnum = OPNO_SHL; break;
+		case GT2: tile->opnum = OPNO_SAR; break;
 		}
-		return tile;
-
-	case LT2:
-		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
-		tile->opnum = OPNO_SHL;
 		if (cover_immed(binop->rhs, tile)) {
 			tile->opclass = OPCL_SHIFT_MI;
 			tile->arity = 1;
