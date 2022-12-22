@@ -76,27 +76,13 @@ cover_binop(struct ast_binop *binop)
 			tile->opclass = OPCL_SHIFT_MI;
 			tile->arity = 1;
 			tile->operands[0] = cover(binop->lhs);
-			return tile;
 		} else {
-			struct tile *mvtile1 = calloc(1, sizeof *mvtile1 + 2 * sizeof(struct tile *));
-			mvtile1->opclass = OPCL_XCHG_FM;
-			mvtile1->opnum = REG_CX;
-			mvtile1->arity = 1;
-			mvtile1->operands[0] = cover(binop->rhs);
-
 			tile->opclass = OPCL_SHIFT_MC;
 			tile->arity = 2;
 			tile->operands[0] = cover(binop->lhs);
-			tile->operands[1] = mvtile1;
-
-			struct tile *mvtile2 = calloc(1, sizeof *mvtile2 + 2 * sizeof(struct tile *));
-			mvtile2->opclass = OPCL_XCHG_FM;
-			mvtile2->opnum = REG_CX;
-			mvtile2->arity = 1;
-			mvtile2->operands[0] = tile;
-
-			return mvtile2;
+			tile->operands[1] = cover(binop->rhs);
 		}
+		return tile;
 
 	default: return NULL;
 	}

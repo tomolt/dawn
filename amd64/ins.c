@@ -1,13 +1,10 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <limits.h>
 
 #include "../util.h"
 #include "ins.h"
-
-static const int avail_registers[] = {
-	0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-};
 
 static void
 emit_prefixes(uint16_t prefixes, uint8_t **O)
@@ -51,15 +48,40 @@ emit_ins(const struct ins *ins, uint8_t **O)
 }
 
 static int
-emit_rec(struct tile *tile, int nextreg, void *stream)
+grab_register(unsigned *regs)
+{
+	int preference[] = { 3, 6, 7, 0, 1, 2, 8, 9, 10, 11, 12, 13, 14, 15 };
+	for (int i = 0; i < (int)(sizeof(preference) / sizeof(*preference)); i++) {
+		unsigned mask = 1 << preference[i];
+		if (*regs & mask) {
+			*regs &= ~mask;
+			return preference[i];
+		}
+	}
+	return -1;
+}
+
+static void
+emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
 {
 	struct ins ins = { 0 };
-	int regs[16];
+	char regs[16];
+	memset(regs, -1, sizeof regs);
+	regs[0] = dest;
+
+	switch (tile->opclass) {
+	case OPCL_SHIFT_MC:
+		availregs &= ~(1u << REG_CX);
+		regs[1] = REG_CX;
+		break;
+	}
 
 	for (int i = 0; i < tile->arity; i++) {
-		regs[i] = emit_rec(tile->operands[i], nextreg + i, stream);
+		if (regs[i] < 0) {
+			regs[i] = grab_register(&availregs);
+		}
+		emit_rec(tile->operands[i], regs[i], availregs, stream);
 	}
-	regs[tile->arity] = avail_registers[nextreg];
 
 	switch (tile->opclass) {
 	case OPCL_ARITH_RM:
@@ -107,26 +129,16 @@ emit_rec(struct tile *tile, int nextreg, void *stream)
 		ins.has_immed = true;
 		ins.immed = tile->immed;
 		break;
-	
-	case OPCL_XCHG_FM:
-		ins.opcode = 0x87;
-		ins.has_modrm = true;
-		ins.mod = MOD_REG;
-		ins.reg = tile->opnum;
-		ins.rm  = regs[0];
-		break;
 	}
 
 	uint8_t buf[32], *ptr = buf;
 	emit_ins(&ins, &ptr);
 	fwrite(buf, ptr - buf, 1, stream);
-
-	return regs[tile->arity];
 }
 
 void
 emit(struct tile *tile, void *stream)
 {
-	emit_rec(tile, 0, stream);
+	emit_rec(tile, 0, ~((1u << REG_SP) | (1u << REG_AX)), stream);
 }
 
