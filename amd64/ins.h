@@ -9,6 +9,7 @@
 #define PFX_REX_R	0x8
 #define PFX_REX_X	0x10
 #define PFX_REX_B	0x20
+#define PFX_REX_MASK	(PFX_REX|PFX_REX_W|PFX_REX_R|PFX_REX_X|PFX_REX_B)
 #define PFX_DATASZ	0x40
 #define PFX_ADDRSZ	0x80
 #define PFX_FS		0x100

@@ -6,6 +6,9 @@
 #include "../util.h"
 #include "ins.h"
 
+#define SETREG(ins,r) do { if ((r) > 7) (ins).prefixes |= PFX_REX_R; (ins).reg = (r) & 7; } while (0)
+#define SETRM(ins,r)  do { if ((r) > 7) (ins).prefixes |= PFX_REX_B; (ins).rm  = (r) & 7; } while (0)
+
 static void
 emit_prefixes(uint16_t prefixes, uint8_t **O)
 {
@@ -14,6 +17,14 @@ emit_prefixes(uint16_t prefixes, uint8_t **O)
 	if (prefixes & PFX_DATASZ) *(*O)++ = 0x66;
 	if (prefixes & PFX_ADDRSZ) *(*O)++ = 0x67;
 
+	if (prefixes & PFX_REX_MASK) {
+		uint8_t rex = 0x40;
+		if (prefixes & PFX_REX_W) rex |= 0x08;
+		if (prefixes & PFX_REX_R) rex |= 0x04;
+		if (prefixes & PFX_REX_X) rex |= 0x02;
+		if (prefixes & PFX_REX_B) rex |= 0x01;
+		*(*O)++ = rex;
+	}
 	if (prefixes & PFX_REX_W) *(*O)++ = 0x48;
 	
 	if (prefixes & PFX_0F) *(*O)++ = 0x0F;
@@ -88,8 +99,8 @@ emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
 		ins.opcode = 0x08 * tile->opnum + 3;
 		ins.has_modrm = true;
 		ins.mod = MOD_REG;
-		ins.reg = regs[0];
-		ins.rm  = regs[1];
+		SETREG(ins, regs[0]);
+		SETRM(ins, regs[1]);
 		break;
 
 	case OPCL_ARITH_MI:
@@ -101,7 +112,7 @@ emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
 		ins.has_immed = true;
 		ins.mod = MOD_REG;
 		ins.reg = tile->opnum;
-		ins.rm  = regs[0];
+		SETRM(ins, regs[0]);
 		ins.immed = tile->immed;
 		break;
 
@@ -110,7 +121,7 @@ emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
 		ins.has_modrm = true;
 		ins.mod = MOD_REG;
 		ins.reg = tile->opnum;
-		ins.rm  = regs[0];
+		SETRM(ins, regs[0]);
 		break;
 
 	case OPCL_SHIFT_MI:
@@ -120,12 +131,13 @@ emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
 		ins.small_immed = true;
 		ins.mod = MOD_REG;
 		ins.reg = tile->opnum;
-		ins.rm  = regs[0];
+		SETRM(ins, regs[0]);
 		ins.immed = tile->immed;
 		break;
 
 	case OPCL_MOV_EI:
-		ins.opcode = 0xB8 + regs[0];
+		ins.opcode = 0xB8 + (regs[0] & 7);
+		if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
 		ins.has_immed = true;
 		ins.immed = tile->immed;
 		break;
