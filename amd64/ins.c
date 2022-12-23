@@ -66,6 +66,7 @@ calc_reg_usage(struct tile *tile)
 {
 	// TODO change algorithm when switching to Sethi-Ullman allocation
 	tile->holdregs = 1;
+	tile->spill = 0;
 	if (!tile->arity) {
 		tile->maxregs++;
 	}
@@ -76,43 +77,49 @@ calc_reg_usage(struct tile *tile)
 			tile->maxregs = oper->maxregs + i;
 		}
 	}
+	if (tile->maxregs > MAX_REGISTERS) {
+		tile->spill = tile->maxregs - MAX_REGISTERS;
+		tile->maxregs = MAX_REGISTERS;
+	}
 }
 
 static int
-grab_register(unsigned *regs)
-{
-	//int preference[] = { 3, 6, 7, 0, 1, 2, 8, 9, 10, 11, 12, 13, 14, 15 };
-	int preference[] = { 3, 6 };
-	for (int i = 0; i < (int)(sizeof(preference) / sizeof(*preference)); i++) {
-		unsigned mask = 1 << preference[i];
-		if (*regs & mask) {
-			*regs &= ~mask;
-			return preference[i];
-		}
-	}
-	assert(0);
-}
-
-static void
-emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
+emit_rec(struct tile *tile, int basereg, void *stream)
 {
 	struct ins ins = { 0 };
 	char regs[16];
-	memset(regs, -1, sizeof regs);
-	regs[0] = dest;
-
-	/*switch (tile->opclass) {
-	case OPCL_SHIFT_MC:
-		availregs &= ~(1u << REG_CX);
-		regs[1] = REG_CX;
-		break;
-	}*/
 
 	for (int i = 0; i < tile->arity; i++) {
-		if (regs[i] < 0) {
-			regs[i] = grab_register(&availregs);
+		struct tile *oper = tile->operands[i];
+		regs[i] = emit_rec(oper, basereg, stream);
+		if (i < tile->spill) {
+			
+			struct ins ins = { 0 };
+			ins.opcode = 0x50 + (regs[i] & 7);
+			if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
+			uint8_t buf[32], *ptr = buf;
+			emit_ins(&ins, &ptr);
+			fwrite(buf, ptr - buf, 1, stream);
+
+		} else {
+			basereg = regs[i]+1;
 		}
-		emit_rec(tile->operands[i], regs[i], availregs, stream);
+	}
+	if (!tile->arity) {
+		regs[0] = basereg++;
+	}
+	assert(basereg <= MAX_REGISTERS);
+
+	for (int i = tile->spill; i--;) {
+
+		regs[i] = basereg++;
+
+		struct ins ins = { 0 };
+		ins.opcode = 0x58 + (regs[i] & 7);
+		if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
+		uint8_t buf[32], *ptr = buf;
+		emit_ins(&ins, &ptr);
+		fwrite(buf, ptr - buf, 1, stream);
 	}
 
 	switch (tile->opclass) {
@@ -167,12 +174,14 @@ emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
 	uint8_t buf[32], *ptr = buf;
 	emit_ins(&ins, &ptr);
 	fwrite(buf, ptr - buf, 1, stream);
+
+	return regs[0];
 }
 
 void
 emit(struct tile *tile, void *stream)
 {
 	calc_reg_usage(tile);
-	emit_rec(tile, 0, ~((1u << REG_SP) | (1u << REG_AX)), stream);
+	emit_rec(tile, 0, stream);
 }
 

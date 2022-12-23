@@ -55,6 +55,7 @@ struct tile {
 
 	int maxregs;
 	int holdregs;
+	int spill;
 
 	int arity;
 	struct tile *operands[];
