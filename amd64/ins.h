@@ -67,6 +67,7 @@ struct tile {
 #define OPCL_SHIFT_MI	0xC1
 #define OPCL_MOV_EI	0xB8
 #define OPCL_MOV_RM	0x8B
+#define OPCL_MUL_M	0xF7
 
 #define OPNO_ADD	0x00
 #define OPNO_SUB	0x05
@@ -77,4 +78,7 @@ struct tile {
 #define OPNO_SHL	0x04
 #define OPNO_SHR	0x05
 #define OPNO_SAR	0x07
+
+#define OPNO_NOT	0x02
+#define OPNO_NEG	0x03
 

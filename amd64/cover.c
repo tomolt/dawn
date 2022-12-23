@@ -38,7 +38,22 @@ cover_varref(struct ast_varref *ref)
 static struct tile *
 cover_unop(struct ast_unop *unop)
 {
+	struct tile *tile;
 	switch (unop->op) {
+	case '~':
+		tile = calloc(1, sizeof *tile + 1 * sizeof(struct tile *));
+		tile->opclass = OPCL_MUL_M;
+		tile->opnum   = OPNO_NOT;
+		tile->arity   = 1;
+		tile->operands[0] = cover(unop->arg);
+		return tile;
+	case '-':
+		tile = calloc(1, sizeof *tile + 1 * sizeof(struct tile *));
+		tile->opclass = OPCL_MUL_M;
+		tile->opnum   = OPNO_NEG;
+		tile->arity   = 1;
+		tile->operands[0] = cover(unop->arg);
+		return tile;
 	default: return NULL;
 	}
 }

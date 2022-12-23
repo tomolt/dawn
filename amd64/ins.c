@@ -194,6 +194,14 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 		ins.disp  = tile->immed;
 		ins.prefixes |= PFX_REX_W;
 		break;
+
+	case OPCL_MUL_M:
+		ins.opcode = 0xF7;
+		ins.has_modrm = true;
+		ins.mod = MOD_REG;
+		ins.reg = tile->opnum;
+		SETRM(ins, regs[0]);
+		break;
 	}
 
 	uint8_t buf[32], *ptr = buf;

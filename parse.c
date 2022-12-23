@@ -38,12 +38,9 @@ static Nud Nuds[NUMTOKS] = {
 	[SYMBOL]  = { CVAR },
 	['!']     = { CPREFIX },
 	['~']     = { CPREFIX },
-	[PLUS2]   = { CPREFIX },
-	[MINUS2]  = { CPREFIX },
-	['+']     = { CPREFIX },
 	['-']     = { CPREFIX },
-	['*']     = { CPREFIX },
-	['&']     = { CPREFIX },
+	//[PLUS2]   = { CPREFIX },
+	//[MINUS2]  = { CPREFIX },
 };
 
 static Led Leds[NUMTOKS] = {
