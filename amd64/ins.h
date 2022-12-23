@@ -53,6 +53,9 @@ struct tile {
 
 	int64_t immed;
 
+	int maxregs;
+	int holdregs;
+
 	int arity;
 	struct tile *operands[];
 };

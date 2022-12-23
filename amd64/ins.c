@@ -58,17 +58,21 @@ emit_ins(const struct ins *ins, uint8_t **O)
 	}
 }
 
-static int
-pressure_rec(const struct tile *tile)
+static void
+calc_reg_usage(struct tile *tile)
 {
 	// TODO change algorithm when switching to Sethi-Ullman allocation
-	int max_pressure = 1;
-	for (int i = 0; i < tile->arity; i++) {
-		int pressure = pressure_rec(tile->operands[i]);
-		if (i > 0) pressure++;
-		if (pressure > max_pressure) max_pressure = pressure;
+	tile->holdregs = 1;
+	if (!tile->arity) {
+		tile->maxregs++;
 	}
-	return max_pressure;
+	for (int i = 0; i < tile->arity; i++) {
+		struct tile *oper = tile->operands[i];
+		calc_reg_usage(oper);
+		if (oper->maxregs + i > tile->maxregs) {
+			tile->maxregs = oper->maxregs + i;
+		}
+	}
 }
 
 static int
