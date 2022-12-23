@@ -28,7 +28,6 @@ emit_prefixes(uint16_t prefixes, uint8_t **O)
 		if (prefixes & PFX_REX_B) rex |= 0x01;
 		*(*O)++ = rex;
 	}
-	if (prefixes & PFX_REX_W) *(*O)++ = 0x48;
 	
 	if (prefixes & PFX_0F) *(*O)++ = 0x0F;
 }
@@ -54,7 +53,7 @@ emit_ins(const struct ins *ins, uint8_t **O)
 		*(*O)++ = (ins->scale<<6) | (ins->index<<3) | ins->base;
 	}
 	if (INS_HAS_DISP(ins)) {
-		emit_immed(ins->disp, 2, O);
+		emit_immed(ins->disp, INS_DISP_WIDTH(ins), O);
 	}
 	if (INS_HAS_IMMED(ins)) {
 		emit_immed(ins->immed, INS_IMMED_WIDTH(ins), O);
@@ -180,6 +179,20 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 		if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
 		ins.has_immed = true;
 		ins.immed = tile->immed;
+		break;
+
+	case OPCL_MOV_RM:
+		ins.opcode = 0x8B;
+		ins.has_modrm = true;
+		ins.mod = MOD_MEM_SD;
+		SETREG(ins, regs[0]);
+		// HACK we hardcode stack behaviour here
+		ins.rm    = REG_SP;
+		ins.scale = 0;
+		ins.index = REG_SP;
+		ins.base  = REG_SP;
+		ins.disp  = tile->immed;
+		ins.prefixes |= PFX_REX_W;
 		break;
 	}
 

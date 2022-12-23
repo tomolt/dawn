@@ -18,7 +18,7 @@
 #define INS_HAS_MODRM(ins) ((ins)->has_modrm)
 #define INS_HAS_SIB(ins) ((ins)->rm == REG_SP)
 #define INS_HAS_DISP(ins) ((ins)->mod == 1 || (ins)->mod == 2 || (!(ins)->mod && (ins)->rm == REG_BP))
-//#define INS_DISP_WIDTH(ins)
+#define INS_DISP_WIDTH(ins) ((ins)->mod == 1 ? 0 : 2)
 #define INS_HAS_IMMED(ins) ((ins)->has_immed)
 #define INS_IMMED_WIDTH(ins) ((ins)->small_immed ? 0 : ((ins)->prefixes & PFX_ADDRSZ ? 1 : ((ins)->prefixes & PFX_REX_W ? 3 : 2)))
 
@@ -66,6 +66,7 @@ struct tile {
 #define OPCL_SHIFT_MC	0xD3
 #define OPCL_SHIFT_MI	0xC1
 #define OPCL_MOV_EI	0xB8
+#define OPCL_MOV_RM	0x8B
 
 #define OPNO_ADD	0x00
 #define OPNO_SUB	0x05

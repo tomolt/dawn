@@ -1,9 +1,12 @@
 typedef void *EXPR;
+typedef void *STMT;
 
 #define EXPR_KIND(expr) (*(int *)(expr))
+#define STMT_KIND(stmt) (*(int *)(stmt))
 
 enum {
 	EXPR_LITERAL,
+	EXPR_VARREF,
 	EXPR_UNOP,
 	EXPR_BINOP,
 };
@@ -11,6 +14,11 @@ enum {
 struct ast_literal {
 	int     kind;
 	int64_t value;
+};
+
+struct ast_varref {
+	int kind;
+	int id;
 };
 
 struct ast_unop {
@@ -24,5 +32,20 @@ struct ast_binop {
 	int  op;
 	EXPR lhs;
 	EXPR rhs;
+};
+
+enum {
+	STMT_VARDECL,
+	STMT_EXPRSTMT,
+};
+
+struct ast_vardecl {
+	int kind;
+	int id;
+};
+
+struct ast_exprstmt {
+	int kind;
+	EXPR *expr;
 };
 

@@ -27,6 +27,15 @@ cover_immed(EXPR expr, struct tile *tile)
 }
 
 static struct tile *
+cover_varref(struct ast_varref *ref)
+{
+	struct tile *tile = calloc(1, sizeof *tile);
+	tile->opclass = OPCL_MOV_RM;
+	tile->immed = 8 * ref->id;
+	return tile;
+}
+
+static struct tile *
 cover_unop(struct ast_unop *unop)
 {
 	switch (unop->op) {
@@ -87,6 +96,7 @@ cover(EXPR expr)
 {
 	switch (EXPR_KIND(expr)) {
 	case EXPR_LITERAL: return cover_literal(expr);
+	case EXPR_VARREF:  return cover_varref (expr);
 	case EXPR_UNOP:    return cover_unop   (expr);
 	case EXPR_BINOP:   return cover_binop  (expr);
 	default: return NULL;

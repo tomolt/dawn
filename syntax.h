@@ -52,6 +52,7 @@ struct Parser {
 	size_t nextcol;
 	char   symbuf[100];
 	Token  token;
+	int    nextvar; // TEMP
 };
 
 const char *fmttok(Token);

@@ -94,6 +94,15 @@ newliteral(int64_t value)
 }
 
 static EXPR
+newvarref(int id)
+{
+	struct ast_varref *expr = calloc(1, sizeof *expr);
+	expr->kind = EXPR_VARREF;
+	expr->id   = id;
+	return expr;
+}
+
+static EXPR
 newunop(int op, EXPR arg)
 {
 	struct ast_unop *expr = calloc(1, sizeof *expr);
@@ -139,10 +148,10 @@ pexpr(P *ctx, int minbp)
 		ADV(ctx);
 		break;
 
-	/*case CVAR:
-		expr = ccsymbol(ctx->token.sym);
+	case CVAR:
+		expr = newvarref(ctx->nextvar++);
 		ADV(ctx);
-		break;*/
+		break;
 
 	case CPAREN:
 		ADV(ctx);
