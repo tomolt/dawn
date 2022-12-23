@@ -2,9 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <assert.h>
 
 #include "../util.h"
 #include "ins.h"
+
+#define MAX_REGISTERS 2
 
 #define SETREG(ins,r) do { if ((r) > 7) (ins).prefixes |= PFX_REX_R; (ins).reg = (r) & 7; } while (0)
 #define SETRM(ins,r)  do { if ((r) > 7) (ins).prefixes |= PFX_REX_B; (ins).rm  = (r) & 7; } while (0)
@@ -78,7 +81,8 @@ calc_reg_usage(struct tile *tile)
 static int
 grab_register(unsigned *regs)
 {
-	int preference[] = { 3, 6, 7, 0, 1, 2, 8, 9, 10, 11, 12, 13, 14, 15 };
+	//int preference[] = { 3, 6, 7, 0, 1, 2, 8, 9, 10, 11, 12, 13, 14, 15 };
+	int preference[] = { 3, 6 };
 	for (int i = 0; i < (int)(sizeof(preference) / sizeof(*preference)); i++) {
 		unsigned mask = 1 << preference[i];
 		if (*regs & mask) {
@@ -86,7 +90,7 @@ grab_register(unsigned *regs)
 			return preference[i];
 		}
 	}
-	return -1;
+	assert(0);
 }
 
 static void
@@ -97,12 +101,12 @@ emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
 	memset(regs, -1, sizeof regs);
 	regs[0] = dest;
 
-	switch (tile->opclass) {
+	/*switch (tile->opclass) {
 	case OPCL_SHIFT_MC:
 		availregs &= ~(1u << REG_CX);
 		regs[1] = REG_CX;
 		break;
-	}
+	}*/
 
 	for (int i = 0; i < tile->arity; i++) {
 		if (regs[i] < 0) {
@@ -168,6 +172,7 @@ emit_rec(struct tile *tile, int dest, unsigned availregs, void *stream)
 void
 emit(struct tile *tile, void *stream)
 {
+	calc_reg_usage(tile);
 	emit_rec(tile, 0, ~((1u << REG_SP) | (1u << REG_AX)), stream);
 }
 
