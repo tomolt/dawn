@@ -84,39 +84,51 @@ calc_reg_usage(struct tile *tile)
 }
 
 static int
-emit_rec(struct tile *tile, int basereg, void *stream)
+alloc_register(unsigned *registers)
+{
+	unsigned mask = 1u;
+	for (int i = 0; i < MAX_REGISTERS; i++, mask<<=1) {
+		if (!(*registers & mask)) {
+			*registers |= mask;
+			return i;
+		}
+	}
+	assert(0);
+}
+
+static int
+emit_rec(struct tile *tile, unsigned registers, void *stream)
 {
 	struct ins ins = { 0 };
 	char regs[16];
 
 	for (int i = 0; i < tile->arity; i++) {
 		struct tile *oper = tile->operands[i];
-		regs[i] = emit_rec(oper, basereg, stream);
+		regs[i] = emit_rec(oper, registers, stream);
 		if (i < tile->spill) {
 			
 			struct ins ins = { 0 };
 			ins.opcode = 0x50 + (regs[i] & 7);
-			if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
+			if (regs[i] > 7) ins.prefixes |= PFX_REX_B;
 			uint8_t buf[32], *ptr = buf;
 			emit_ins(&ins, &ptr);
 			fwrite(buf, ptr - buf, 1, stream);
 
 		} else {
-			basereg = regs[i]+1;
+			registers |= 1u << regs[i];
 		}
 	}
 	if (!tile->arity) {
-		regs[0] = basereg++;
+		regs[0] = alloc_register(&registers);
 	}
-	assert(basereg <= MAX_REGISTERS);
 
 	for (int i = tile->spill; i--;) {
 
-		regs[i] = basereg++;
+		regs[i] = alloc_register(&registers);
 
 		struct ins ins = { 0 };
 		ins.opcode = 0x58 + (regs[i] & 7);
-		if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
+		if (regs[i] > 7) ins.prefixes |= PFX_REX_B;
 		uint8_t buf[32], *ptr = buf;
 		emit_ins(&ins, &ptr);
 		fwrite(buf, ptr - buf, 1, stream);
