@@ -107,6 +107,11 @@ cover_binop(struct ast_binop *binop)
 }
 
 struct tile *
+cover_ifelse(struct ast_ifelse *ifelse)
+{
+}
+
+struct tile *
 cover(EXPR expr)
 {
 	switch (EXPR_KIND(expr)) {
@@ -114,6 +119,7 @@ cover(EXPR expr)
 	case EXPR_VARREF:  return cover_varref (expr);
 	case EXPR_UNOP:    return cover_unop   (expr);
 	case EXPR_BINOP:   return cover_binop  (expr);
+	case EXPR_IFELSE:  return cover_ifelse (expr);
 	default: return NULL;
 	}
 }

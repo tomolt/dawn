@@ -9,6 +9,7 @@ enum {
 	EXPR_VARREF,
 	EXPR_UNOP,
 	EXPR_BINOP,
+	EXPR_IFELSE,
 };
 
 struct ast_literal {
@@ -32,6 +33,13 @@ struct ast_binop {
 	int  op;
 	EXPR lhs;
 	EXPR rhs;
+};
+
+struct ast_ifelse {
+	int  kind;
+	EXPR cond;
+	EXPR tbranch;
+	EXPR fbranch;
 };
 
 enum {

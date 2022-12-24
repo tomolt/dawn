@@ -12,6 +12,7 @@
 #define CVAR    2
 #define CPAREN  3
 #define CPREFIX 4
+#define CIF     5
 
 #define CLEFTASSOC  1
 #define CRIGHTASSOC 2
@@ -39,6 +40,7 @@ static Nud Nuds[NUMTOKS] = {
 	['!']     = { CPREFIX },
 	['~']     = { CPREFIX },
 	['-']     = { CPREFIX },
+	[KIF]     = { CIF },
 	//[PLUS2]   = { CPREFIX },
 	//[MINUS2]  = { CPREFIX },
 };
@@ -120,6 +122,14 @@ newbinop(int op, EXPR lhs, EXPR rhs)
 	return expr;
 }
 
+static EXPR
+newifelse(void)
+{
+	struct ast_ifelse *expr = calloc(1, sizeof *expr);
+	expr->kind = EXPR_IFELSE;
+	return expr;
+}
+
 static void
 skip(P *ctx, int kind)
 {
@@ -160,6 +170,16 @@ pexpr(P *ctx, int minbp)
 		token = ctx->token;
 		ADV(ctx);
 		expr = newunop(token.kind, pexpr(ctx, PREFIXPREC));
+		break;
+	
+	case CIF:
+		ADV(ctx);
+		expr = newifelse();
+		expr->cond = pexpr(ctx, 0);
+		skip(ctx, KTHEN);
+		expr->tbranch = pexpr(ctx, 0);
+		skip(ctx, KELSE);
+		expr->fbranch = pexpr(ctx, 0);
 		break;
 	}
 

@@ -16,7 +16,7 @@ enum {
 	LITERAL = 1, SYMBOL,
 	/* [3,11] */
 	/* [14,17] */
-	KWHILE, KIF, KELSE,
+	KWHILE, KIF, KTHEN, KELSE,
 	/* [18,27] */
 	PLUS2, MINUS2,
 	OR2, AND2, EQ2, NOTEQ, LTEQ, GTEQ,

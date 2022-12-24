@@ -74,6 +74,9 @@ lexsym(P *ctx)
 	case 'i':
 		if (!strcmp(sym, "if"))  return KIF;
 		break;
+	case 't':
+		if (!strcmp(sym, "then")) return KTHEN;
+		break;
 	case 'w':
 		if (!strcmp(sym, "while")) return KWHILE;
 		break;
