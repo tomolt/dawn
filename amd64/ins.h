@@ -55,10 +55,7 @@ struct operand {
 };
 
 struct tile {
-	int opclass;
-	int opnum;
-
-	int64_t immed;
+	struct ins ins;
 
 	int maxregs;
 	int holdregs;
@@ -67,14 +64,6 @@ struct tile {
 	int arity;
 	struct operand operands[];
 };
-
-#define OPCL_ARITH_RM	0x03
-#define OPCL_ARITH_MI	0x81
-#define OPCL_SHIFT_MC	0xD3
-#define OPCL_SHIFT_MI	0xC1
-#define OPCL_MOV_EI	0xB8
-#define OPCL_MOV_RM	0x8B
-#define OPCL_MUL_M	0xF7
 
 #define OPNO_ADD	0x00
 #define OPNO_SUB	0x05
@@ -88,4 +77,11 @@ struct tile {
 
 #define OPNO_NOT	0x02
 #define OPNO_NEG	0x03
+
+#define OPC_ARITH_RM(num) ((0x03 + 8 * (num)) | HAS_MODRM)
+#define OPC_ARITH_MI(small) (((small) ? 0x83 | SMALL_IMMED : 0x81) | HAS_MODRM | HAS_IMMED)
+#define OPC_SHIFT_MC() (0xD3 | HAS_MODRM)
+#define OPC_SHIFT_MI() (0xC1 | HAS_MODRM | HAS_IMMED | SMALL_IMMED)
+#define OPC_MOV_EI() (0xB8 | HAS_IMMED)
+#define OPC_MUL_M() (0xF7 | HAS_MODRM)
 

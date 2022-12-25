@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
 #include <assert.h>
 
 #include "../util.h"
@@ -10,14 +9,6 @@
 #define MAX_REGISTERS 2
 
 #define SETREG(ins,r) do { if ((r) > 7) (ins).prefixes |= PFX_REX_R; (ins).reg = (r) & 7; } while (0)
-#define SETRM(ins,r)  do { if ((r) > 7) (ins).prefixes |= PFX_REX_B; (ins).rm  = (r) & 7; } while (0)
-
-#define OPC_ARITH_RM(num) ((0x03 + 8 * (num)) | HAS_MODRM)
-#define OPC_ARITH_MI(small) (((small) ? 0x83 | SMALL_IMMED : 0x81) | HAS_MODRM | HAS_IMMED)
-#define OPC_SHIFT_MC() (0xD3 | HAS_MODRM)
-#define OPC_SHIFT_MI() (0xC1 | HAS_MODRM | HAS_IMMED | SMALL_IMMED)
-#define OPC_MOV_EI() (0xB8 | HAS_IMMED)
-#define OPC_MUL_M() (0xF7 | HAS_MODRM)
 
 static void
 emit_prefixes(uint16_t prefixes, uint8_t **O)
@@ -52,7 +43,7 @@ static void
 emit_ins(const struct ins *ins, uint8_t **O)
 {
 	if (ins->prefixes) emit_prefixes(ins->prefixes, O);
-	*(*O)++ = ins->opcode;
+	*(*O)++ = ins->opcode & 0xFF;
 	if (INS_HAS_MODRM(ins)) {
 		*(*O)++ = (ins->mod<<6) | (ins->reg<<3) | ins->rm;
 	}
@@ -105,7 +96,7 @@ alloc_register(unsigned *registers)
 static int
 emit_rec(struct tile *tile, unsigned registers, void *stream)
 {
-	struct ins ins = { 0 };
+	struct ins ins = tile->ins;
 	char regs[16];
 
 	for (int i = 0; i < tile->arity; i++) {
@@ -140,59 +131,10 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 		fwrite(buf, ptr - buf, 1, stream);
 	}
 
-	switch (tile->opclass) {
-	case OPCL_ARITH_RM:
-		ins.opcode = OPC_ARITH_RM(tile->opnum);
-		ins.mod = MOD_REG;
-		break;
-
-	case OPCL_ARITH_MI:
-		{
-			bool small_immed = tile->immed <= SCHAR_MAX && tile->immed >= SCHAR_MIN;
-			ins.opcode = OPC_ARITH_MI(small_immed);
-			ins.mod = MOD_REG;
-			ins.reg = tile->opnum;
-			ins.immed = tile->immed;
-		}
-		break;
-
-	case OPCL_SHIFT_MC:
-		ins.opcode = OPC_SHIFT_MC();
-		ins.mod = MOD_REG;
-		ins.reg = tile->opnum;
-		break;
-
-	case OPCL_SHIFT_MI:
-		ins.opcode = OPC_SHIFT_MI();
-		ins.mod = MOD_REG;
-		ins.reg = tile->opnum;
-		ins.immed = tile->immed;
-		break;
-
-	case OPCL_MOV_EI:
-		ins.opcode = OPC_MOV_EI() | (regs[0] & 7);
+	// HACK
+	if (ins.opcode == OPC_MOV_EI()) {
+		ins.opcode |= regs[0] & 7;
 		if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
-		ins.immed = tile->immed;
-		break;
-
-	case OPCL_MOV_RM:
-		ins.opcode = 0x8B | HAS_MODRM;
-		ins.mod = MOD_MEM_SD;
-		SETREG(ins, regs[0]);
-		// HACK we hardcode stack behaviour here
-		ins.rm    = REG_SP;
-		ins.scale = 0;
-		ins.index = REG_SP;
-		ins.base  = REG_SP;
-		ins.disp  = tile->immed;
-		ins.prefixes |= PFX_REX_W;
-		break;
-
-	case OPCL_MUL_M:
-		ins.opcode = OPC_MUL_M();
-		ins.mod = MOD_REG;
-		ins.reg = tile->opnum;
-		break;
 	}
 
 	for (int i = 0; i < tile->arity; i++) {
