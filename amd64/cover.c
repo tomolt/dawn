@@ -43,9 +43,13 @@ static struct tile *
 cover_varref(struct ast_varref *ref)
 {
 	struct tile *tile = calloc(1, sizeof *tile);
-	// TODO actually implement this
-	tile->ins.opcode = OPC_MOV_EI();
-	tile->genesis = SLOT_EMB;
+	tile->ins.opcode = OPC_MOV_RM();
+	tile->ins.mod = MOD_MEM_LD;
+	tile->ins.rm  = REG_SP;
+	tile->ins.index = REG_SP;
+	tile->ins.base = REG_SP;
+	tile->ins.disp = 8 * ref->id;
+	tile->genesis = SLOT_REG;
 	return tile;
 }
 

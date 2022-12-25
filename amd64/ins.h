@@ -84,6 +84,7 @@ struct tile {
 #define OPC_ARITH_MI(small) (((small) ? 0x83 | SMALL_IMMED : 0x81) | HAS_MODRM | HAS_IMMED)
 #define OPC_SHIFT_MC() (0xD3 | HAS_MODRM)
 #define OPC_SHIFT_MI() (0xC1 | HAS_MODRM | HAS_IMMED | SMALL_IMMED)
+#define OPC_MOV_RM() (0x8B | HAS_MODRM)
 #define OPC_MOV_EI() (0xB8 | HAS_IMMED)
 #define OPC_MUL_M() (0xF7 | HAS_MODRM)
 
