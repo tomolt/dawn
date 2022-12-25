@@ -41,18 +41,18 @@ cover_unop(struct ast_unop *unop)
 	struct tile *tile;
 	switch (unop->op) {
 	case '~':
-		tile = calloc(1, sizeof *tile + 1 * sizeof(struct tile *));
+		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
 		tile->opclass = OPCL_MUL_M;
 		tile->opnum   = OPNO_NOT;
 		tile->arity   = 1;
-		tile->operands[0] = cover(unop->arg);
+		tile->operands[0] = (struct operand){ cover(unop->arg), SLOT_RM };
 		return tile;
 	case '-':
-		tile = calloc(1, sizeof *tile + 1 * sizeof(struct tile *));
+		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
 		tile->opclass = OPCL_MUL_M;
 		tile->opnum   = OPNO_NEG;
 		tile->arity   = 1;
-		tile->operands[0] = cover(unop->arg);
+		tile->operands[0] = (struct operand){ cover(unop->arg), SLOT_RM };
 		return tile;
 	default: return NULL;
 	}
@@ -64,7 +64,7 @@ cover_binop(struct ast_binop *binop)
 	struct tile *tile;
 	switch (binop->op) {
 	case '+': case '-': case '&': case '|': case '^':
-		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
+		tile = calloc(1, sizeof *tile + 2 * sizeof(struct operand));
 		switch (binop->op) {
 		case '+': tile->opnum = OPNO_ADD; break;
 		case '-': tile->opnum = OPNO_SUB; break;
@@ -75,17 +75,17 @@ cover_binop(struct ast_binop *binop)
 		if (cover_immed(binop->rhs, tile)) {
 			tile->opclass = OPCL_ARITH_MI;
 			tile->arity = 1;
-			tile->operands[0] = cover(binop->lhs);
+			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM };
 		} else {
 			tile->opclass = OPCL_ARITH_RM;
 			tile->arity = 2;
-			tile->operands[0] = cover(binop->lhs);
-			tile->operands[1] = cover(binop->rhs);
+			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_REG };
+			tile->operands[1] = (struct operand){ cover(binop->rhs), SLOT_RM };
 		}
 		return tile;
 
 	case LT2: case GT2:
-		tile = calloc(1, sizeof *tile + 2 * sizeof(struct tile *));
+		tile = calloc(1, sizeof *tile + 2 * sizeof(struct operand));
 		switch (binop->op) {
 		case LT2: tile->opnum = OPNO_SHL; break;
 		case GT2: tile->opnum = OPNO_SAR; break;
@@ -93,12 +93,12 @@ cover_binop(struct ast_binop *binop)
 		if (cover_immed(binop->rhs, tile)) {
 			tile->opclass = OPCL_SHIFT_MI;
 			tile->arity = 1;
-			tile->operands[0] = cover(binop->lhs);
+			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM };
 		} else {
 			tile->opclass = OPCL_SHIFT_MC;
 			tile->arity = 2;
-			tile->operands[0] = cover(binop->lhs);
-			tile->operands[1] = cover(binop->rhs);
+			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM };
+			tile->operands[1] = (struct operand){ cover(binop->rhs), SLOT_NIL };
 		}
 		return tile;
 

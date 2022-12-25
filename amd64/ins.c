@@ -16,7 +16,7 @@
 #define OPC_ARITH_MI(small) (((small) ? 0x83 | SMALL_IMMED : 0x81) | HAS_MODRM | HAS_IMMED)
 #define OPC_SHIFT_MC() (0xD3 | HAS_MODRM)
 #define OPC_SHIFT_MI() (0xC1 | HAS_MODRM | HAS_IMMED | SMALL_IMMED)
-#define OPC_MOV_EI(reg) ((0xB8 + ((reg) & 7)) | HAS_IMMED)
+#define OPC_MOV_EI() (0xB8 | HAS_IMMED)
 #define OPC_MUL_M() (0xF7 | HAS_MODRM)
 
 static void
@@ -77,10 +77,10 @@ calc_reg_usage(struct tile *tile)
 		tile->maxregs++;
 	}
 	for (int i = 0; i < tile->arity; i++) {
-		struct tile *oper = tile->operands[i];
-		calc_reg_usage(oper);
-		if (oper->maxregs + i > tile->maxregs) {
-			tile->maxregs = oper->maxregs + i;
+		struct operand *opd = &tile->operands[i];
+		calc_reg_usage(opd->tile);
+		if (opd->tile->maxregs + i > tile->maxregs) {
+			tile->maxregs = opd->tile->maxregs + i;
 		}
 	}
 	if (tile->maxregs > MAX_REGISTERS) {
@@ -109,8 +109,8 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 	char regs[16];
 
 	for (int i = 0; i < tile->arity; i++) {
-		struct tile *oper = tile->operands[i];
-		regs[i] = emit_rec(oper, registers, stream);
+		const struct operand *opd = &tile->operands[i];
+		regs[i] = emit_rec(opd->tile, registers, stream);
 		if (i < tile->spill) {
 			
 			struct ins ins = { 0 };
@@ -144,8 +144,6 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 	case OPCL_ARITH_RM:
 		ins.opcode = OPC_ARITH_RM(tile->opnum);
 		ins.mod = MOD_REG;
-		SETREG(ins, regs[0]);
-		SETRM(ins, regs[1]);
 		break;
 
 	case OPCL_ARITH_MI:
@@ -154,7 +152,6 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 			ins.opcode = OPC_ARITH_MI(small_immed);
 			ins.mod = MOD_REG;
 			ins.reg = tile->opnum;
-			SETRM(ins, regs[0]);
 			ins.immed = tile->immed;
 		}
 		break;
@@ -163,19 +160,17 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 		ins.opcode = OPC_SHIFT_MC();
 		ins.mod = MOD_REG;
 		ins.reg = tile->opnum;
-		SETRM(ins, regs[0]);
 		break;
 
 	case OPCL_SHIFT_MI:
 		ins.opcode = OPC_SHIFT_MI();
 		ins.mod = MOD_REG;
 		ins.reg = tile->opnum;
-		SETRM(ins, regs[0]);
 		ins.immed = tile->immed;
 		break;
 
 	case OPCL_MOV_EI:
-		ins.opcode = OPC_MOV_EI(regs[0]);
+		ins.opcode = OPC_MOV_EI() | (regs[0] & 7);
 		if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
 		ins.immed = tile->immed;
 		break;
@@ -197,8 +192,25 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 		ins.opcode = OPC_MUL_M();
 		ins.mod = MOD_REG;
 		ins.reg = tile->opnum;
-		SETRM(ins, regs[0]);
 		break;
+	}
+
+	for (int i = 0; i < tile->arity; i++) {
+		const struct operand *opd = &tile->operands[i];
+		switch (opd->slot) {
+		case SLOT_EMB:
+			ins.opcode += regs[i] & 7;
+			if (regs[i] > 7) ins.prefixes |= PFX_REX_B;
+			break;
+		case SLOT_REG:
+			ins.reg = regs[i] & 7;
+			if (regs[i] > 7) ins.prefixes |= PFX_REX_R;
+			break;
+		case SLOT_RM:
+			ins.rm = regs[i] & 7;
+			if (regs[i] > 7) ins.prefixes |= PFX_REX_B;
+			break;
+		}
 	}
 
 	uint8_t buf[32], *ptr = buf;

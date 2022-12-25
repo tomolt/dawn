@@ -47,6 +47,13 @@ struct ins {
 	int64_t immed;
 };
 
+enum { SLOT_NIL, SLOT_EMB, SLOT_REG, SLOT_RM, SLOT_BASE, SLOT_INDEX };
+
+struct operand {
+	struct tile *tile;
+	int slot;
+};
+
 struct tile {
 	int opclass;
 	int opnum;
@@ -58,7 +65,7 @@ struct tile {
 	int spill;
 
 	int arity;
-	struct tile *operands[];
+	struct operand operands[];
 };
 
 #define OPCL_ARITH_RM	0x03
