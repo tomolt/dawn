@@ -28,6 +28,17 @@ cover_immed(EXPR expr, struct tile *tile)
 	return true;
 }
 
+static void
+cover_modrm(EXPR expr, bool is_dest, struct tile *tile)
+{
+	switch (EXPR_KIND(expr)) {
+	default:
+		tile->ins.mod = MOD_REG;
+		tile->operands[tile->arity++] = (struct operand){
+			cover(expr), SLOT_RM | (is_dest ? SLOT_IS_DEST : 0) };
+	}
+}
+
 static struct tile *
 cover_varref(struct ast_varref *ref)
 {
@@ -46,18 +57,14 @@ cover_unop(struct ast_unop *unop)
 	case '~':
 		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
 		tile->ins.opcode = OPC_MUL_M();
-		tile->ins.mod    = MOD_REG;
 		tile->ins.reg    = OPNO_NOT;
-		tile->arity = 1;
-		tile->operands[0] = (struct operand){ cover(unop->arg), SLOT_RM | SLOT_IS_DEST };
+		cover_modrm(unop->arg, true, tile);
 		return tile;
 	case '-':
 		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
 		tile->ins.opcode = OPC_MUL_M();
-		tile->ins.mod    = MOD_REG;
 		tile->ins.reg    = OPNO_NEG;
-		tile->arity = 1;
-		tile->operands[0] = (struct operand){ cover(unop->arg), SLOT_RM | SLOT_IS_DEST };
+		cover_modrm(unop->arg, true, tile);
 		return tile;
 	default: return NULL;
 	}
@@ -81,16 +88,13 @@ cover_binop(struct ast_binop *binop)
 		if (cover_immed(binop->rhs, tile)) {
 			bool small_immed = tile->ins.immed >= SCHAR_MIN && tile->ins.immed <= SCHAR_MAX;
 			tile->ins.opcode = OPC_ARITH_MI(small_immed);
-			tile->ins.mod    = MOD_REG;
 			tile->ins.reg    = num;
-			tile->arity = 1;
-			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
+			cover_modrm(binop->lhs, true, tile);
 		} else {
 			tile->ins.opcode = OPC_ARITH_RM(num);
-			tile->ins.mod    = MOD_REG;
-			tile->arity = 2;
-			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_REG | SLOT_IS_DEST };
-			tile->operands[1] = (struct operand){ cover(binop->rhs), SLOT_RM };
+			tile->operands[tile->arity++] = (struct operand){
+				cover(binop->lhs), SLOT_REG | SLOT_IS_DEST };
+			cover_modrm(binop->rhs, false, tile);
 		}
 		return tile;
 
@@ -102,17 +106,16 @@ cover_binop(struct ast_binop *binop)
 		}
 		if (cover_immed(binop->rhs, tile)) {
 			tile->ins.opcode = OPC_SHIFT_MI();
-			tile->ins.mod    = MOD_REG;
 			tile->ins.reg    = num;
-			tile->arity = 1;
-			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
+			cover_modrm(binop->lhs, true, tile);
 		} else {
 			tile->ins.opcode = OPC_SHIFT_MC();
-			tile->ins.mod    = MOD_REG;
 			tile->ins.reg    = num;
-			tile->arity = 2;
-			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
-			tile->operands[1] = (struct operand){ cover(binop->rhs), SLOT_NIL };
+			tile->ins.mod    = MOD_REG;
+			tile->operands[tile->arity++] = (struct operand){
+				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
+			tile->operands[tile->arity++] = (struct operand){
+				cover(binop->rhs), SLOT_NIL };
 		}
 		return tile;
 
