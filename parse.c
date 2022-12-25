@@ -123,10 +123,13 @@ newbinop(int op, EXPR lhs, EXPR rhs)
 }
 
 static EXPR
-newifelse(void)
+newifelse(EXPR *cond, EXPR *tbranch, EXPR *fbranch)
 {
 	struct ast_ifelse *expr = calloc(1, sizeof *expr);
 	expr->kind = EXPR_IFELSE;
+	expr->cond = cond;
+	expr->tbranch = tbranch;
+	expr->fbranch = fbranch;
 	return expr;
 }
 
@@ -173,13 +176,15 @@ pexpr(P *ctx, int minbp)
 		break;
 	
 	case CIF:
-		ADV(ctx);
-		expr = newifelse();
-		expr->cond = pexpr(ctx, 0);
-		skip(ctx, KTHEN);
-		expr->tbranch = pexpr(ctx, 0);
-		skip(ctx, KELSE);
-		expr->fbranch = pexpr(ctx, 0);
+		{
+			ADV(ctx);
+			EXPR *cond = pexpr(ctx, 0);
+			skip(ctx, KTHEN);
+			EXPR *tbranch = pexpr(ctx, 0);
+			skip(ctx, KELSE);
+			EXPR *fbranch = pexpr(ctx, 0);
+			expr = newifelse(cond, tbranch, fbranch);
+		}
 		break;
 	}
 

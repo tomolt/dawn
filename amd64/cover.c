@@ -109,6 +109,8 @@ cover_binop(struct ast_binop *binop)
 struct tile *
 cover_ifelse(struct ast_ifelse *ifelse)
 {
+	(void)ifelse;
+	return NULL;
 }
 
 struct tile *
