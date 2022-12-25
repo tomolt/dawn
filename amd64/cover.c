@@ -74,7 +74,7 @@ cover_unop(struct ast_unop *unop)
 		tile->ins.reg    = OPNO_NOT;
 		tile->ins.mod    = MOD_REG;
 		tile->operands[tile->arity++] = (struct operand){
-			cover(unop->arg), SLOT_RM | SLOT_IS_DEST};
+			cover(unop->arg), SLOT_RM | SLOT_IS_DEST };
 		return tile;
 	case '-':
 		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
@@ -82,7 +82,7 @@ cover_unop(struct ast_unop *unop)
 		tile->ins.reg    = OPNO_NEG;
 		tile->ins.mod    = MOD_REG;
 		tile->operands[tile->arity++] = (struct operand){
-			cover(unop->arg), SLOT_RM | SLOT_IS_DEST};
+			cover(unop->arg), SLOT_RM | SLOT_IS_DEST };
 		return tile;
 	default: return NULL;
 	}
@@ -109,7 +109,7 @@ cover_binop(struct ast_binop *binop)
 			tile->ins.reg    = num;
 			tile->ins.mod    = MOD_REG;
 			tile->operands[tile->arity++] = (struct operand){
-				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST};
+				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
 		} else {
 			tile->ins.opcode = OPC_ARITH_RM(num);
 			tile->operands[tile->arity++] = (struct operand){
@@ -129,7 +129,7 @@ cover_binop(struct ast_binop *binop)
 			tile->ins.reg    = num;
 			tile->ins.mod    = MOD_REG;
 			tile->operands[tile->arity++] = (struct operand){
-				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST};
+				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
 		} else {
 			tile->ins.opcode = OPC_SHIFT_MC();
 			tile->ins.reg    = num;
