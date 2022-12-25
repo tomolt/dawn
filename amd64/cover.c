@@ -32,6 +32,16 @@ static void
 cover_modrm(EXPR expr, bool is_dest, struct tile *tile)
 {
 	switch (EXPR_KIND(expr)) {
+	case EXPR_VARREF:
+		{
+			const struct ast_varref *ref = expr;
+			tile->ins.mod = MOD_MEM_LD;
+			tile->ins.rm  = REG_SP;
+			tile->ins.index = REG_SP;
+			tile->ins.base = REG_SP;
+			tile->ins.disp = 8 * ref->id;
+		}
+		break;
 	default:
 		tile->ins.mod = MOD_REG;
 		tile->operands[tile->arity++] = (struct operand){
@@ -62,13 +72,17 @@ cover_unop(struct ast_unop *unop)
 		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
 		tile->ins.opcode = OPC_MUL_M();
 		tile->ins.reg    = OPNO_NOT;
-		cover_modrm(unop->arg, true, tile);
+		tile->ins.mod    = MOD_REG;
+		tile->operands[tile->arity++] = (struct operand){
+			cover(unop->arg), SLOT_RM | SLOT_IS_DEST};
 		return tile;
 	case '-':
 		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
 		tile->ins.opcode = OPC_MUL_M();
 		tile->ins.reg    = OPNO_NEG;
-		cover_modrm(unop->arg, true, tile);
+		tile->ins.mod    = MOD_REG;
+		tile->operands[tile->arity++] = (struct operand){
+			cover(unop->arg), SLOT_RM | SLOT_IS_DEST};
 		return tile;
 	default: return NULL;
 	}
@@ -93,7 +107,9 @@ cover_binop(struct ast_binop *binop)
 			bool small_immed = tile->ins.immed >= SCHAR_MIN && tile->ins.immed <= SCHAR_MAX;
 			tile->ins.opcode = OPC_ARITH_MI(small_immed);
 			tile->ins.reg    = num;
-			cover_modrm(binop->lhs, true, tile);
+			tile->ins.mod    = MOD_REG;
+			tile->operands[tile->arity++] = (struct operand){
+				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST};
 		} else {
 			tile->ins.opcode = OPC_ARITH_RM(num);
 			tile->operands[tile->arity++] = (struct operand){
@@ -111,7 +127,9 @@ cover_binop(struct ast_binop *binop)
 		if (cover_immed(binop->rhs, tile)) {
 			tile->ins.opcode = OPC_SHIFT_MI();
 			tile->ins.reg    = num;
-			cover_modrm(binop->lhs, true, tile);
+			tile->ins.mod    = MOD_REG;
+			tile->operands[tile->arity++] = (struct operand){
+				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST};
 		} else {
 			tile->ins.opcode = OPC_SHIFT_MC();
 			tile->ins.reg    = num;
