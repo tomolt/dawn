@@ -15,12 +15,16 @@
 #define PFX_FS		0x100
 #define PFX_GS		0x200
 
-#define INS_HAS_MODRM(ins) ((ins)->has_modrm)
+#define HAS_MODRM	0x0100
+#define HAS_IMMED	0x0200
+#define SMALL_IMMED	0x0400
+
+#define INS_HAS_MODRM(ins) ((ins)->opcode & HAS_MODRM)
 #define INS_HAS_SIB(ins) ((ins)->rm == REG_SP)
 #define INS_HAS_DISP(ins) ((ins)->mod == 1 || (ins)->mod == 2 || (!(ins)->mod && (ins)->rm == REG_BP))
 #define INS_DISP_WIDTH(ins) ((ins)->mod == 1 ? 0 : 2)
-#define INS_HAS_IMMED(ins) ((ins)->has_immed)
-#define INS_IMMED_WIDTH(ins) ((ins)->small_immed ? 0 : ((ins)->prefixes & PFX_ADDRSZ ? 1 : ((ins)->prefixes & PFX_REX_W ? 3 : 2)))
+#define INS_HAS_IMMED(ins) ((ins)->opcode & HAS_IMMED)
+#define INS_IMMED_WIDTH(ins) ((ins)->opcode & SMALL_IMMED ? 0 : ((ins)->prefixes & PFX_ADDRSZ ? 1 : ((ins)->prefixes & PFX_REX_W ? 3 : 2)))
 
 #define MOD_MEM_ND	0
 #define MOD_MEM_SD	1
@@ -29,11 +33,7 @@
 
 struct ins {
 	uint16_t prefixes;
-	uint8_t  opcode;
-
-	bool has_modrm;
-	bool has_immed;
-	bool small_immed;
+	uint16_t opcode;
 
 	uint8_t mod;
 	uint8_t reg;
