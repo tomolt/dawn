@@ -59,9 +59,21 @@ emit_ins(const struct ins *ins, uint8_t **O)
 }
 
 static void
+sort_operands(struct tile *tile)
+{
+	for (int i = 1; i < tile->arity; i++) {
+		// TODO consider holdregs
+		for (int j = i; j > 0 && tile->operands[j].tile->maxregs > tile->operands[j-1].tile->maxregs; j--) {
+			struct operand temp = tile->operands[j];
+			tile->operands[j] = tile->operands[j-1];
+			tile->operands[j-1] = temp;
+		}
+	}
+}
+
+static void
 calc_reg_usage(struct tile *tile)
 {
-	// TODO change algorithm when switching to Sethi-Ullman allocation
 	tile->holdregs = 1;
 	tile->spill = 0;
 	if (!tile->arity) {
@@ -70,6 +82,10 @@ calc_reg_usage(struct tile *tile)
 	for (int i = 0; i < tile->arity; i++) {
 		struct operand *opd = &tile->operands[i];
 		calc_reg_usage(opd->tile);
+	}
+	sort_operands(tile);
+	for (int i = 0; i < tile->arity; i++) {
+		struct operand *opd = &tile->operands[i];
 		if (opd->tile->maxregs + i > tile->maxregs) {
 			tile->maxregs = opd->tile->maxregs + i;
 		}
@@ -98,6 +114,7 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 {
 	struct ins ins = tile->ins;
 	char regs[16];
+	int dest = -1;
 
 	for (int i = 0; i < tile->arity; i++) {
 		const struct operand *opd = &tile->operands[i];
@@ -115,8 +132,22 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 			registers |= 1u << regs[i];
 		}
 	}
-	if (!tile->arity) {
-		regs[0] = alloc_register(&registers);
+	if (tile->genesis != SLOT_NIL) {
+		dest = alloc_register(&registers);
+		switch (tile->genesis & 0xFF) {
+		case SLOT_EMB:
+			ins.opcode += dest & 7;
+			if (dest > 7) ins.prefixes |= PFX_REX_B;
+			break;
+		case SLOT_REG:
+			ins.reg = dest & 7;
+			if (dest > 7) ins.prefixes |= PFX_REX_R;
+			break;
+		case SLOT_RM:
+			ins.rm = dest & 7;
+			if (dest > 7) ins.prefixes |= PFX_REX_B;
+			break;
+		}
 	}
 
 	for (int i = tile->spill; i--;) {
@@ -131,15 +162,9 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 		fwrite(buf, ptr - buf, 1, stream);
 	}
 
-	// HACK
-	if (ins.opcode == OPC_MOV_EI()) {
-		ins.opcode |= regs[0] & 7;
-		if (regs[0] > 7) ins.prefixes |= PFX_REX_B;
-	}
-
 	for (int i = 0; i < tile->arity; i++) {
 		const struct operand *opd = &tile->operands[i];
-		switch (opd->slot) {
+		switch (opd->slot & 0xFF) {
 		case SLOT_EMB:
 			ins.opcode += regs[i] & 7;
 			if (regs[i] > 7) ins.prefixes |= PFX_REX_B;
@@ -153,13 +178,16 @@ emit_rec(struct tile *tile, unsigned registers, void *stream)
 			if (regs[i] > 7) ins.prefixes |= PFX_REX_B;
 			break;
 		}
+		if (opd->slot & SLOT_IS_DEST) {
+			dest = regs[i];
+		}
 	}
 
 	uint8_t buf[32], *ptr = buf;
 	emit_ins(&ins, &ptr);
 	fwrite(buf, ptr - buf, 1, stream);
 
-	return regs[0];
+	return dest;
 }
 
 void

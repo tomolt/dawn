@@ -14,6 +14,7 @@ cover_literal(struct ast_literal *literal)
 	struct tile *tile = calloc(1, sizeof *tile);
 	tile->ins.opcode = OPC_MOV_EI();
 	tile->ins.immed = literal->value;
+	tile->genesis = SLOT_EMB;
 	return tile;
 }
 
@@ -33,6 +34,7 @@ cover_varref(struct ast_varref *ref)
 	struct tile *tile = calloc(1, sizeof *tile);
 	// TODO actually implement this
 	tile->ins.opcode = OPC_MOV_EI();
+	tile->genesis = SLOT_EMB;
 	return tile;
 }
 
@@ -47,7 +49,7 @@ cover_unop(struct ast_unop *unop)
 		tile->ins.mod    = MOD_REG;
 		tile->ins.reg    = OPNO_NOT;
 		tile->arity = 1;
-		tile->operands[0] = (struct operand){ cover(unop->arg), SLOT_RM };
+		tile->operands[0] = (struct operand){ cover(unop->arg), SLOT_RM | SLOT_IS_DEST };
 		return tile;
 	case '-':
 		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
@@ -55,7 +57,7 @@ cover_unop(struct ast_unop *unop)
 		tile->ins.mod    = MOD_REG;
 		tile->ins.reg    = OPNO_NEG;
 		tile->arity = 1;
-		tile->operands[0] = (struct operand){ cover(unop->arg), SLOT_RM };
+		tile->operands[0] = (struct operand){ cover(unop->arg), SLOT_RM | SLOT_IS_DEST };
 		return tile;
 	default: return NULL;
 	}
@@ -82,12 +84,12 @@ cover_binop(struct ast_binop *binop)
 			tile->ins.mod    = MOD_REG;
 			tile->ins.reg    = num;
 			tile->arity = 1;
-			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM };
+			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
 		} else {
 			tile->ins.opcode = OPC_ARITH_RM(num);
 			tile->ins.mod    = MOD_REG;
 			tile->arity = 2;
-			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_REG };
+			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_REG | SLOT_IS_DEST };
 			tile->operands[1] = (struct operand){ cover(binop->rhs), SLOT_RM };
 		}
 		return tile;
@@ -103,13 +105,13 @@ cover_binop(struct ast_binop *binop)
 			tile->ins.mod    = MOD_REG;
 			tile->ins.reg    = num;
 			tile->arity = 1;
-			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM };
+			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
 		} else {
 			tile->ins.opcode = OPC_SHIFT_MC();
 			tile->ins.mod    = MOD_REG;
 			tile->ins.reg    = num;
 			tile->arity = 2;
-			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM };
+			tile->operands[0] = (struct operand){ cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
 			tile->operands[1] = (struct operand){ cover(binop->rhs), SLOT_NIL };
 		}
 		return tile;

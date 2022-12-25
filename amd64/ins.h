@@ -48,6 +48,7 @@ struct ins {
 };
 
 enum { SLOT_NIL, SLOT_EMB, SLOT_REG, SLOT_RM, SLOT_BASE, SLOT_INDEX };
+#define SLOT_IS_DEST	0x0100
 
 struct operand {
 	struct tile *tile;
@@ -61,6 +62,7 @@ struct tile {
 	int holdregs;
 	int spill;
 
+	int genesis;
 	int arity;
 	struct operand operands[];
 };
