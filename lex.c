@@ -106,6 +106,32 @@ yylex(P *ctx)
 			++ctx->nextrow, ctx->nextcol = 1;
 			break;
 
+		case '*': ADV(ctx);
+			switch (ctx->c) {
+			case '=': ADV(ctx); return STAREQ;
+			default: return '*';
+			}
+		case '%': ADV(ctx);
+			switch (ctx->c) {
+			case '=': ADV(ctx); return PERCEQ;
+			default: return '%';
+			}
+		case '^': ADV(ctx);
+			switch (ctx->c) {
+			case '=': ADV(ctx); return HATEQ;
+			default: return '^';
+			}
+		case '!': ADV(ctx);
+			switch (ctx->c) {
+			case '=': ADV(ctx); return NOTEQ;
+			default: return '!';
+			}
+		case '=': ADV(ctx);
+			switch (ctx->c) {
+			case '=': ADV(ctx); return EQ2;
+			default: return '=';
+			}
+
 		case '+': ADV(ctx);
 			switch (ctx->c) {
 			case '=': ADV(ctx); return PLUSEQ;
@@ -118,35 +144,11 @@ yylex(P *ctx)
 			case '-': ADV(ctx); return MINUS2;
 			default: return '-';
 			}
-		case '*': ADV(ctx);
-			switch (ctx->c) {
-			case '=': ADV(ctx); return STAREQ;
-			default: return '*';
-			}
-		case '/': ADV(ctx);
-			switch (ctx->c) {
-			case '=': ADV(ctx); return SLASHEQ;
-			case '/': ADV(ctx); while (ctx->c != EOF && ctx->c != '\n') ADV(ctx); break;
-			case '*': ADV(ctx); lexbcom(ctx); break;
-			default: return '/';
-			}
-			break;
-		case '%': ADV(ctx);
-			switch (ctx->c) {
-			case '=': ADV(ctx); return PERCEQ;
-			default: return '%';
-			}
-
 		case '&': ADV(ctx);
 			switch (ctx->c) {
 			case '=': ADV(ctx); return ANDEQ;
 			case '&': ADV(ctx); return AND2;
 			default: return '&';
-			}
-		case '^': ADV(ctx);
-			switch (ctx->c) {
-			case '=': ADV(ctx); return HATEQ;
-			default: return '^';
 			}
 		case '|': ADV(ctx);
 			switch (ctx->c) {
@@ -155,16 +157,15 @@ yylex(P *ctx)
 			default: return '|';
 			}
 
-		case '!': ADV(ctx);
+		case '/': ADV(ctx);
 			switch (ctx->c) {
-			case '=': ADV(ctx); return NOTEQ;
-			default: return '!';
+			case '=': ADV(ctx); return SLASHEQ;
+			case '/': ADV(ctx); while (ctx->c != EOF && ctx->c != '\n') ADV(ctx); break;
+			case '*': ADV(ctx); lexbcom(ctx); break;
+			default: return '/';
 			}
-		case '=': ADV(ctx);
-			switch (ctx->c) {
-			case '=': ADV(ctx); return EQ2;
-			default: return '=';
-			}
+			break;
+
 		case '<': ADV(ctx);
 			switch (ctx->c) {
 			case '<': ADV(ctx);
