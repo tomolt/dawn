@@ -9,7 +9,6 @@ enum {
 	EXPR_varref,
 	EXPR_unop,
 	EXPR_binop,
-	EXPR_ifelse,
 };
 
 struct ast_literal {
@@ -35,16 +34,10 @@ struct ast_binop {
 	EXPR rhs;
 };
 
-struct ast_ifelse {
-	int  kind;
-	EXPR cond;
-	EXPR tbranch;
-	EXPR fbranch;
-};
-
 enum {
-	STMT_VARDECL,
-	STMT_EXPRSTMT,
+	STMT_vardecl,
+	STMT_exprstmt,
+	STMT_ifelse,
 };
 
 struct ast_vardecl {
@@ -54,6 +47,13 @@ struct ast_vardecl {
 
 struct ast_exprstmt {
 	int kind;
-	EXPR *expr;
+	EXPR expr;
+};
+
+struct ast_ifelse {
+	int  kind;
+	EXPR cond;
+	STMT tbranch;
+	STMT fbranch;
 };
 

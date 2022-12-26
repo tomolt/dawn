@@ -206,9 +206,9 @@ initlex(P *ctx, char *path, void *file)
 {
 	ctx->stream = file;
 	ctx->curfile = path;
-	ADV(ctx);
 	ctx->nextrow = 1;
 	ctx->nextcol = 1;
 	ctx->nextvar = 0;
+	ADV(ctx);
 }
 

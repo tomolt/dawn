@@ -11,13 +11,17 @@
 		*_n = (struct ast_##name){ EXPR_##name, __VA_ARGS__ };	\
 		(expr) = _n;						\
 	} while (0)
+#define NEW_STMT(stmt, name, ...) do {					\
+		struct ast_##name *_n = calloc(1, sizeof *_n);		\
+		*_n = (struct ast_##name){ STMT_##name, __VA_ARGS__ };	\
+		(stmt) = _n;						\
+	} while (0)
 
 #define CNONE   0
 #define CNUM    1
 #define CVAR    2
 #define CPAREN  3
 #define CPREFIX 4
-#define CIF     5
 
 #define CLEFTASSOC  1
 #define CRIGHTASSOC 2
@@ -45,9 +49,6 @@ static Nud Nuds[NUMTOKS] = {
 	['!']     = { CPREFIX },
 	['~']     = { CPREFIX },
 	['-']     = { CPREFIX },
-	[KIF]     = { CIF },
-	//[PLUS2]   = { CPREFIX },
-	//[MINUS2]  = { CPREFIX },
 };
 
 static Led Leds[NUMTOKS] = {
@@ -61,28 +62,6 @@ static Led Leds[NUMTOKS] = {
 	['-']     = {  8, CLEFTASSOC },
 	['|']     = {  8, CLEFTASSOC },
 	['^']     = {  8, CLEFTASSOC },
-#if 0
-	['<']     = { 10, CLEFTASSOC },
-	[LTEQ]    = { 10, CLEFTASSOC },
-	['>']     = { 10, CLEFTASSOC },
-	[GTEQ]    = { 10, CLEFTASSOC },
-	[EQ2]     = {  9, CLEFTASSOC },
-	[NOTEQ]   = {  9, CLEFTASSOC },
-	[AND2]    = {  5, CLEFTASSOC },
-	[OR2]     = {  4, CLEFTASSOC },
-	['=']     = {  2, CRIGHTASSOC },
-	[PLUSEQ]  = {  2, CRIGHTASSOC },
-	[MINUSEQ] = {  2, CRIGHTASSOC },
-	[STAREQ]  = {  2, CRIGHTASSOC },
-	[SLASHEQ] = {  2, CRIGHTASSOC },
-	[PERCEQ]  = {  2, CRIGHTASSOC },
-	[LT2EQ]   = {  2, CRIGHTASSOC },
-	[GT2EQ]   = {  2, CRIGHTASSOC },
-	[ANDEQ]   = {  2, CRIGHTASSOC },
-	[HATEQ]   = {  2, CRIGHTASSOC },
-	[OREQ]    = {  2, CRIGHTASSOC },
-	[',']     = {  1, CRIGHTASSOC },
-#endif
 };
 
 static void
@@ -126,18 +105,6 @@ pexpr(P *ctx, int minbp)
 		ADV(ctx);
 		NEW_EXPR(expr, unop, token.kind, pexpr(ctx, PREFIXPREC));
 		break;
-	
-	case CIF:
-		{
-			ADV(ctx);
-			EXPR *cond = pexpr(ctx, 0);
-			skip(ctx, KTHEN);
-			EXPR *tbranch = pexpr(ctx, 0);
-			skip(ctx, KELSE);
-			EXPR *fbranch = pexpr(ctx, 0);
-			NEW_EXPR(expr, ifelse, cond, tbranch, fbranch);
-		}
-		break;
 	}
 
 	while (Leds[ctx->token.kind].bp > minbp) {
@@ -162,46 +129,33 @@ pexpr(P *ctx, int minbp)
 	return expr;
 }
 
-#if 0
-static void
-pblock(P *ctx)
-{
-	uint scope;
-	skip(ctx, '{');
-	scope = getscope();
-	while (ctx->token.kind != '}') {
-		if (!ctx->token.kind) error(ctx->token.sloc, "Unclosed braces.");
-		pstmt(ctx);
-	}
-	ADV(ctx);
-	resetscope(scope);
-}
-
-static void
+static STMT
 pstmt(P *ctx)
 {
+	STMT stmt;
 	switch (ctx->token.kind) {
-	case '{': pblock(ctx); break;
+	case KIF:
+		{
+			ADV(ctx);
+			EXPR *cond = pexpr(ctx, 0);
+			skip(ctx, KTHEN);
+			STMT *tbranch = pstmt(ctx);
+			skip(ctx, KELSE);
+			STMT *fbranch = pstmt(ctx);
+			NEW_STMT(stmt, ifelse, cond, tbranch, fbranch);
+		}
+		break;
 	default:
-		pexpr(ctx, 0);
+		NEW_STMT(stmt, exprstmt, pexpr(ctx, 0));
 		skip(ctx, ';');
 	}
+	return stmt;
 }
-#endif
 
 void *
 parse(P *ctx)
 {
-#if 0
-	uint scope = getscope();
 	ADV(ctx);
-	while (ctx->token.kind) {
-		pstmt(ctx);
-	}
-	resetscope(scope);
-#endif
-	ADV(ctx);
-	EXPR expr = pexpr(ctx, 0);
-	return expr;
+	return pstmt(ctx);
 }
 

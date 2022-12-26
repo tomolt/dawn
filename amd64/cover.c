@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <limits.h>
+#include <assert.h>
 
 #include "../util.h"
 #include "../syntax.h"
 #include "../ast.h"
 #include "ins.h"
 
-struct tile *cover(EXPR expr);
+struct tile *cover_expr(EXPR expr);
 
 static struct tile *
 cover_literal(struct ast_literal *literal)
@@ -45,7 +46,7 @@ cover_modrm(EXPR expr, bool is_dest, struct tile *tile)
 	default:
 		tile->ins.mod = MOD_REG;
 		tile->operands[tile->arity++] = (struct operand){
-			cover(expr), SLOT_RM | (is_dest ? SLOT_IS_DEST : 0) };
+			cover_expr(expr), SLOT_RM | (is_dest ? SLOT_IS_DEST : 0) };
 	}
 }
 
@@ -74,7 +75,7 @@ cover_unop(struct ast_unop *unop)
 		tile->ins.reg    = OPNO_NOT;
 		tile->ins.mod    = MOD_REG;
 		tile->operands[tile->arity++] = (struct operand){
-			cover(unop->arg), SLOT_RM | SLOT_IS_DEST };
+			cover_expr(unop->arg), SLOT_RM | SLOT_IS_DEST };
 		return tile;
 	case '-':
 		tile = calloc(1, sizeof *tile + 1 * sizeof(struct operand));
@@ -82,9 +83,9 @@ cover_unop(struct ast_unop *unop)
 		tile->ins.reg    = OPNO_NEG;
 		tile->ins.mod    = MOD_REG;
 		tile->operands[tile->arity++] = (struct operand){
-			cover(unop->arg), SLOT_RM | SLOT_IS_DEST };
+			cover_expr(unop->arg), SLOT_RM | SLOT_IS_DEST };
 		return tile;
-	default: return NULL;
+	default: assert(0); return NULL;
 	}
 }
 
@@ -109,11 +110,11 @@ cover_binop(struct ast_binop *binop)
 			tile->ins.reg    = num;
 			tile->ins.mod    = MOD_REG;
 			tile->operands[tile->arity++] = (struct operand){
-				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
+				cover_expr(binop->lhs), SLOT_RM | SLOT_IS_DEST };
 		} else {
 			tile->ins.opcode = OPC_ARITH_RM(num);
 			tile->operands[tile->arity++] = (struct operand){
-				cover(binop->lhs), SLOT_REG | SLOT_IS_DEST };
+				cover_expr(binop->lhs), SLOT_REG | SLOT_IS_DEST };
 			cover_modrm(binop->rhs, false, tile);
 		}
 		return tile;
@@ -129,39 +130,40 @@ cover_binop(struct ast_binop *binop)
 			tile->ins.reg    = num;
 			tile->ins.mod    = MOD_REG;
 			tile->operands[tile->arity++] = (struct operand){
-				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
+				cover_expr(binop->lhs), SLOT_RM | SLOT_IS_DEST };
 		} else {
 			tile->ins.opcode = OPC_SHIFT_MC();
 			tile->ins.reg    = num;
 			tile->ins.mod    = MOD_REG;
 			tile->operands[tile->arity++] = (struct operand){
-				cover(binop->lhs), SLOT_RM | SLOT_IS_DEST };
+				cover_expr(binop->lhs), SLOT_RM | SLOT_IS_DEST };
 			tile->operands[tile->arity++] = (struct operand){
-				cover(binop->rhs), SLOT_NIL };
+				cover_expr(binop->rhs), SLOT_NIL };
 		}
 		return tile;
 
-	default: return NULL;
+	default: assert(0); return NULL;
 	}
 }
 
 struct tile *
-cover_ifelse(struct ast_ifelse *ifelse)
-{
-	(void)ifelse;
-	return NULL;
-}
-
-struct tile *
-cover(EXPR expr)
+cover_expr(EXPR expr)
 {
 	switch (EXPR_KIND(expr)) {
 	case EXPR_literal: return cover_literal(expr);
 	case EXPR_varref:  return cover_varref (expr);
 	case EXPR_unop:    return cover_unop   (expr);
 	case EXPR_binop:   return cover_binop  (expr);
-	case EXPR_ifelse:  return cover_ifelse (expr);
-	default: return NULL;
+	default: assert(0); return NULL;
+	}
+}
+
+struct tile *
+cover(STMT stmt)
+{
+	switch (STMT_KIND(stmt)) {
+	case STMT_exprstmt: return cover_expr(((struct ast_exprstmt *)stmt)->expr);
+	default: assert(0); return NULL;
 	}
 }
 
