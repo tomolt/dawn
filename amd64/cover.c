@@ -21,7 +21,7 @@ cover_literal(struct ast_literal *literal)
 static bool
 cover_immed(EXPR expr, struct tile *tile)
 {
-	if (EXPR_KIND(expr) != EXPR_LITERAL) {
+	if (EXPR_KIND(expr) != EXPR_literal) {
 		return false;
 	}
 	tile->ins.immed = ((struct ast_literal *)expr)->value;
@@ -32,7 +32,7 @@ static void
 cover_modrm(EXPR expr, bool is_dest, struct tile *tile)
 {
 	switch (EXPR_KIND(expr)) {
-	case EXPR_VARREF:
+	case EXPR_varref:
 		{
 			const struct ast_varref *ref = expr;
 			tile->ins.mod = MOD_MEM_LD;
@@ -156,11 +156,11 @@ struct tile *
 cover(EXPR expr)
 {
 	switch (EXPR_KIND(expr)) {
-	case EXPR_LITERAL: return cover_literal(expr);
-	case EXPR_VARREF:  return cover_varref (expr);
-	case EXPR_UNOP:    return cover_unop   (expr);
-	case EXPR_BINOP:   return cover_binop  (expr);
-	case EXPR_IFELSE:  return cover_ifelse (expr);
+	case EXPR_literal: return cover_literal(expr);
+	case EXPR_varref:  return cover_varref (expr);
+	case EXPR_unop:    return cover_unop   (expr);
+	case EXPR_binop:   return cover_binop  (expr);
+	case EXPR_ifelse:  return cover_ifelse (expr);
 	default: return NULL;
 	}
 }

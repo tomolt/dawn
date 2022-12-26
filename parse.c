@@ -6,6 +6,11 @@
 #include "ast.h"
 
 #define ADV(ctx) lextok(ctx)
+#define NEW_EXPR(expr, name, ...) do {					\
+		struct ast_##name *_n = calloc(1, sizeof *_n);		\
+		*_n = (struct ast_##name){ EXPR_##name, __VA_ARGS__ };	\
+		(expr) = _n;						\
+	} while (0)
 
 #define CNONE   0
 #define CNUM    1
@@ -80,59 +85,6 @@ static Led Leds[NUMTOKS] = {
 #endif
 };
 
-//static void pstmt(P *);
-//static void pblock(P *);
-
-static EXPR
-newliteral(int64_t value)
-{
-	struct ast_literal *expr = calloc(1, sizeof *expr);
-	expr->kind  = EXPR_LITERAL;
-	expr->value = value;
-	return expr;
-}
-
-static EXPR
-newvarref(int id)
-{
-	struct ast_varref *expr = calloc(1, sizeof *expr);
-	expr->kind = EXPR_VARREF;
-	expr->id   = id;
-	return expr;
-}
-
-static EXPR
-newunop(int op, EXPR arg)
-{
-	struct ast_unop *expr = calloc(1, sizeof *expr);
-	expr->kind = EXPR_UNOP;
-	expr->op   = op;
-	expr->arg  = arg;
-	return expr;
-}
-
-static EXPR
-newbinop(int op, EXPR lhs, EXPR rhs)
-{
-	struct ast_binop *expr = calloc(1, sizeof *expr);
-	expr->kind = EXPR_BINOP;
-	expr->op   = op;
-	expr->lhs  = lhs;
-	expr->rhs  = rhs;
-	return expr;
-}
-
-static EXPR
-newifelse(EXPR *cond, EXPR *tbranch, EXPR *fbranch)
-{
-	struct ast_ifelse *expr = calloc(1, sizeof *expr);
-	expr->kind = EXPR_IFELSE;
-	expr->cond = cond;
-	expr->tbranch = tbranch;
-	expr->fbranch = fbranch;
-	return expr;
-}
-
 static void
 skip(P *ctx, int kind)
 {
@@ -154,12 +106,12 @@ pexpr(P *ctx, int minbp)
 		break;
 
 	case CNUM:
-		expr = newliteral(ctx->token.num);
+		NEW_EXPR(expr, literal, ctx->token.num);
 		ADV(ctx);
 		break;
 
 	case CVAR:
-		expr = newvarref(ctx->nextvar++);
+		NEW_EXPR(expr, varref, ctx->nextvar++);
 		ADV(ctx);
 		break;
 
@@ -172,7 +124,7 @@ pexpr(P *ctx, int minbp)
 	case CPREFIX:
 		token = ctx->token;
 		ADV(ctx);
-		expr = newunop(token.kind, pexpr(ctx, PREFIXPREC));
+		NEW_EXPR(expr, unop, token.kind, pexpr(ctx, PREFIXPREC));
 		break;
 	
 	case CIF:
@@ -183,23 +135,26 @@ pexpr(P *ctx, int minbp)
 			EXPR *tbranch = pexpr(ctx, 0);
 			skip(ctx, KELSE);
 			EXPR *fbranch = pexpr(ctx, 0);
-			expr = newifelse(cond, tbranch, fbranch);
+			NEW_EXPR(expr, ifelse, cond, tbranch, fbranch);
 		}
 		break;
 	}
 
 	while (Leds[ctx->token.kind].bp > minbp) {
+		EXPR *rhs;
 		switch (Leds[ctx->token.kind].code) {
 		case CLEFTASSOC:
 			token = ctx->token;
 			ADV(ctx);
-			expr = newbinop(token.kind, expr, pexpr(ctx, Leds[token.kind].bp));
+			rhs = pexpr(ctx, Leds[token.kind].bp);
+			NEW_EXPR(expr, binop, token.kind, expr, rhs);
 			break;
 
 		case CRIGHTASSOC:
 			token = ctx->token;
 			ADV(ctx);
-			expr = newbinop(token.kind, expr, pexpr(ctx, Leds[token.kind].bp-1));
+			rhs = pexpr(ctx, Leds[token.kind].bp-1);
+			NEW_EXPR(expr, binop, token.kind, expr, rhs);
 			break;
 		}
 	}

@@ -5,11 +5,11 @@ typedef void *STMT;
 #define STMT_KIND(stmt) (*(int *)(stmt))
 
 enum {
-	EXPR_LITERAL,
-	EXPR_VARREF,
-	EXPR_UNOP,
-	EXPR_BINOP,
-	EXPR_IFELSE,
+	EXPR_literal,
+	EXPR_varref,
+	EXPR_unop,
+	EXPR_binop,
+	EXPR_ifelse,
 };
 
 struct ast_literal {
