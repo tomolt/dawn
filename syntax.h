@@ -1,8 +1,3 @@
-#ifdef SYNTAX_H
-#	error "Multiple inclusion."
-#endif
-#define SYNTAX_H
-
 typedef struct SLoc   SLoc;
 typedef struct Token  Token;
 typedef struct Parser Parser;
@@ -62,9 +57,4 @@ void error(SLoc, const char *, ...);
 Token lextok(Parser *);
 void initlex(Parser *, char *, void *);
 void *parse(Parser *);
-
-void addbinding(const char *, uint);
-uint lookup(const char *);
-uint getscope(void);
-void resetscope(uint);
 
