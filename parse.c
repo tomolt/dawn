@@ -34,12 +34,12 @@ typedef struct Nud Nud;
 typedef struct Led Led;
 
 struct Nud {
-	uint code : 8;
+	unsigned code : 8;
 };
 
 struct Led {
-	uint bp : 4;
-	uint code : 4;
+	unsigned bp : 4;
+	unsigned code : 4;
 };
 
 static Nud Nuds[NUMTOKS] = {

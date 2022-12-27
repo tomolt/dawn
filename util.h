@@ -1,8 +1,3 @@
-#ifdef UTIL_H
-#	error "Multiple inclusion."
-#endif
-#define UTIL_H
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -15,15 +10,10 @@
 	} while (0)
 
 #define DIV_ROUNDUP(a, b) (((a)+(b)-1)/(b))
-#define UINT_BITS (8*sizeof(uint))
+#define UINT_BITS (8*sizeof(unsigned))
 #define SET_BIT(b,i) ((b)[(i)/UINT_BITS] |= 1<<((i)%UINT_BITS))
 #define CLR_BIT(b,i) ((b)[(i)/UINT_BITS] &= ~(1<<((i)%UINT_BITS)))
 #define GET_BIT(b,i) (((b)[(i)/UINT_BITS] >> (i%UINT_BITS)) & 1)
-
-typedef unsigned char uchar;
-typedef unsigned int  uint;
-typedef unsigned long ulong;
-typedef long long     llong;
 
 void *reallocarray(void *, size_t, size_t);
 char *strchrnul(const char *, int);

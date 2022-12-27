@@ -25,17 +25,16 @@ enum {
 
 struct SLoc {
 	const char *file;
-	ulong row;
-	ulong col;
+	size_t row;
+	size_t col;
 };
 
-/* TODO Reduce memory usage */
 struct Token {
-	uchar kind;
-	SLoc  sloc;
+	unsigned char kind;
+	SLoc sloc;
 	union {
-		llong num;
-		char *sym;
+		int64_t num;
+		char   *sym;
 	};
 };
 
