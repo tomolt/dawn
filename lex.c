@@ -10,7 +10,7 @@
 typedef struct Parser P;
 
 static void
-lexbcom(P *ctx)
+lex_block_comment(P *ctx)
 {
 	char chr, prev = ' ';
 	for (;;) {
@@ -26,26 +26,26 @@ lexbcom(P *ctx)
 }
 
 static int
-atnum(P *ctx)
+at_number(P *ctx)
 {
 	return ctx->c >= '0' && ctx->c <= '9';
 }
 
 static int
-lexnum(P *ctx)
+lex_number(P *ctx)
 {
-	long long num = 0;
+	int64_t num = 0;
 	do {
 		num *= 10;
 		num += ctx->c - '0';
 		ADV(ctx);
-	} while (atnum(ctx));
+	} while (at_number(ctx));
 	ctx->token.num = num;
 	return LITERAL;
 }
 
 static int
-atsym(P *ctx)
+at_symbol(P *ctx)
 {
 	return (ctx->c >= 'a' && ctx->c <= 'z')
 		|| (ctx->c >= 'A' && ctx->c <= 'Z')
@@ -54,7 +54,7 @@ atsym(P *ctx)
 }
 
 static int
-lexsym(P *ctx)
+lex_symbol(P *ctx)
 {
 	char *sym = ctx->symbuf;
 	int len = 0;
@@ -62,10 +62,10 @@ lexsym(P *ctx)
 	do {
 		sym[len++] = ctx->c;
 		ADV(ctx);
-	} while (atsym(ctx) && len < 99);
+	} while (at_symbol(ctx) && len < 99);
 	sym[len] = 0;
 	
-	while (atsym(ctx)) ADV(ctx);
+	while (at_symbol(ctx)) ADV(ctx);
 
 	switch (sym[0]) {
 	case 'e':
@@ -87,7 +87,7 @@ lexsym(P *ctx)
 }
 
 static int
-yylex(P *ctx)
+lex_token(P *ctx)
 {
 	char f;
 	for (;;) {
@@ -161,7 +161,7 @@ yylex(P *ctx)
 			switch (ctx->c) {
 			case '=': ADV(ctx); return SLASHEQ;
 			case '/': ADV(ctx); while (ctx->c != EOF && ctx->c != '\n') ADV(ctx); break;
-			case '*': ADV(ctx); lexbcom(ctx); break;
+			case '*': ADV(ctx); lex_block_comment(ctx); break;
 			default: return '/';
 			}
 			break;
@@ -187,8 +187,8 @@ yylex(P *ctx)
 			f = ctx->c; ADV(ctx); return f;
 
 		default:
-			if (atnum(ctx)) return lexnum(ctx);
-			if (atsym(ctx)) return lexsym(ctx);
+			if (at_number(ctx)) return lex_number(ctx);
+			if (at_symbol(ctx)) return lex_symbol(ctx);
 			/* TODO report error location! */
 			cerror("Unexpected character %c.", ctx->c);
 		}
@@ -198,7 +198,7 @@ yylex(P *ctx)
 Token
 lextok(P *ctx)
 {
-	ctx->token.kind = yylex(ctx);
+	ctx->token.kind = lex_token(ctx);
 	return ctx->token;
 }
 
