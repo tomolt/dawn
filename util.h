@@ -16,8 +16,6 @@
 #define GET_BIT(b,i) (((b)[(i)/UINT_BITS] >> (i%UINT_BITS)) & 1)
 
 void *reallocarray(void *, size_t, size_t);
-char *strchrnul(const char *, int);
-char *strfmt(const char *, ...);
 uint32_t memhash(const void *, size_t);
 uint32_t strhash(const char *);
 uint32_t xorfold(uint32_t, int);

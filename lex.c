@@ -86,7 +86,7 @@ lex_symbol(P *ctx)
 	return SYMBOL;
 }
 
-static int
+int
 lex_token(P *ctx)
 {
 	char f;
@@ -193,13 +193,6 @@ lex_token(P *ctx)
 			cerror("Unexpected character %c.", ctx->c);
 		}
 	}
-}
-
-Token
-lextok(P *ctx)
-{
-	ctx->token.kind = lex_token(ctx);
-	return ctx->token;
 }
 
 void

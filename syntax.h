@@ -53,7 +53,7 @@ const char *fmttok(Token);
 void cerror(const char *, ...);
 void error(SLoc, const char *, ...);
 
-Token lextok(Parser *);
+int lex_token(Parser *ctx);
 void initlex(Parser *, char *, void *);
 void *parse(Parser *);
 

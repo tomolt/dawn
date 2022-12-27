@@ -24,27 +24,6 @@ reallocarray(void *optr, size_t nmemb, size_t size)
 	return realloc(optr, size * nmemb);
 }
 
-char *
-strchrnul(const char *str, int chr)
-{
-	while (*str && *str != chr) ++str;
-	return (char *) str;
-}
-
-char *
-strfmt(const char *fmt, ...)
-{
-	char buf[1000];
-	int len;
-	va_list ap;
-	
-	va_start(ap, fmt);
-	len = vsnprintf(buf, 1000, fmt, ap);
-	assert(len < 1000);
-	va_end(ap);
-	return strdup(buf);
-}
-
 static uint32_t
 fnv1a(const unsigned char *bytes, size_t len)
 {

@@ -5,7 +5,7 @@
 #include "syntax.h"
 #include "ast.h"
 
-#define ADV(ctx) lextok(ctx)
+#define ADV(ctx) ((ctx)->token.kind = lex_token(ctx))
 #define NEW_EXPR(expr, name, ...) do {					\
 		struct ast_##name *_n = calloc(1, sizeof *_n);		\
 		*_n = (struct ast_##name){ EXPR_##name, __VA_ARGS__ };	\
