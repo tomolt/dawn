@@ -1,5 +1,4 @@
 #include <stddef.h>
-#include <stdint.h>
 #include <stdbool.h>
 
 #define IS_POW2(x) (!((x) & ((x)-1)))

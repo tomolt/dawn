@@ -1,7 +1,6 @@
+#include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
 
-#include "util.h"
 #include "syntax.h"
 #include "ast.h"
 

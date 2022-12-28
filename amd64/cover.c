@@ -1,8 +1,9 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <assert.h>
 
-#include "../util.h"
 #include "../syntax.h"
 #include "../ast.h"
 #include "ins.h"

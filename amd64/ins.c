@@ -1,9 +1,5 @@
 #include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
 
-#include "../util.h"
 #include "ins.h"
 
 #define MAX_REGISTERS 2

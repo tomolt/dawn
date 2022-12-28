@@ -1,7 +1,7 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "util.h"
 #include "dawn.h"
 #include "syntax.h"
 #include "ast.h"
@@ -9,7 +9,7 @@
 struct tile;
 
 extern struct tile *cover(STMT stmt);
-void dawn_sethi_ullman(struct tile *tile, void *stream);
+extern void dawn_sethi_ullman(struct tile *tile, void *stream);
 
 int
 main(int argc, char **argv)

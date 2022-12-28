@@ -1,11 +1,10 @@
-#include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "util.h"
 #include "syntax.h"
 
-#define ADV(ctx) ++(ctx)->nextcol, (ctx)->c = fgetc((ctx)->stream)
+#define ADV(ctx) (++(ctx)->nextcol, (ctx)->c = fgetc((ctx)->stream))
 
 typedef struct Parser P;
 

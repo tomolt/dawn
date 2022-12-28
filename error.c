@@ -1,8 +1,8 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "util.h"
 #include "syntax.h"
 
 static const char *TokNames[NUMTOKS] = {
