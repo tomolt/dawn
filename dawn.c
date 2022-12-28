@@ -9,7 +9,7 @@
 struct tile;
 
 extern struct tile *cover(STMT stmt);
-extern void emit(struct tile *tile, void *stream);
+void dawn_sethi_ullman(struct tile *tile, void *stream);
 
 int
 main(int argc, char **argv)
@@ -19,7 +19,7 @@ main(int argc, char **argv)
 	initlex(&parser, "stdin", stdin);
 	STMT stmt = parse(&parser);
 	struct tile *tile = cover(stmt);
-	emit(tile, stdout);
+	dawn_sethi_ullman(tile, stdout);
 	return 0;
 }
 
