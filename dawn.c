@@ -4,6 +4,7 @@
 
 #include "dawn.h"
 #include "syntax.h"
+#include "pool.h"
 #include "ast.h"
 
 struct tile;
@@ -20,6 +21,7 @@ main(int argc, char **argv)
 	STMT stmt = parse(&parser);
 	struct tile *tile = dawn_cover_ast(stmt);
 	dawn_sethi_ullman(tile, stdout);
+	pool_release(&parser.ast_pool);
 	return 0;
 }
 

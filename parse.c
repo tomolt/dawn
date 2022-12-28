@@ -3,17 +3,18 @@
 
 #include "syntax.h"
 #include "ast.h"
+#include "pool.h"
 
 #define ADV(ctx) ((ctx)->token.kind = lex_token(ctx))
-#define NEW_EXPR(expr, name, ...) do {					\
-		struct ast_##name *_n = calloc(1, sizeof *_n);		\
-		*_n = (struct ast_##name){ EXPR_##name, __VA_ARGS__ };	\
-		(expr) = _n;						\
+#define NEW_EXPR(ctx, expr, name, ...) do {						\
+		struct ast_##name *_n = pool_alloc(&(ctx)->ast_pool, sizeof *_n);	\
+		*_n = (struct ast_##name){ EXPR_##name, __VA_ARGS__ };			\
+		(expr) = _n;								\
 	} while (0)
-#define NEW_STMT(stmt, name, ...) do {					\
-		struct ast_##name *_n = calloc(1, sizeof *_n);		\
-		*_n = (struct ast_##name){ STMT_##name, __VA_ARGS__ };	\
-		(stmt) = _n;						\
+#define NEW_STMT(ctx, stmt, name, ...) do {						\
+		struct ast_##name *_n = pool_alloc(&(ctx)->ast_pool, sizeof *_n);	\
+		*_n = (struct ast_##name){ STMT_##name, __VA_ARGS__ };			\
+		(stmt) = _n;								\
 	} while (0)
 
 #define CNONE   0
@@ -84,12 +85,12 @@ pexpr(P *ctx, int minbp)
 		break;
 
 	case CNUM:
-		NEW_EXPR(expr, literal, ctx->token.num);
+		NEW_EXPR(ctx, expr, literal, ctx->token.num);
 		ADV(ctx);
 		break;
 
 	case CVAR:
-		NEW_EXPR(expr, varref, ctx->nextvar++);
+		NEW_EXPR(ctx, expr, varref, ctx->nextvar++);
 		ADV(ctx);
 		break;
 
@@ -102,7 +103,7 @@ pexpr(P *ctx, int minbp)
 	case CPREFIX:
 		token = ctx->token;
 		ADV(ctx);
-		NEW_EXPR(expr, unop, token.kind, pexpr(ctx, PREFIXPREC));
+		NEW_EXPR(ctx, expr, unop, token.kind, pexpr(ctx, PREFIXPREC));
 		break;
 	}
 
@@ -113,14 +114,14 @@ pexpr(P *ctx, int minbp)
 			token = ctx->token;
 			ADV(ctx);
 			rhs = pexpr(ctx, Leds[token.kind].bp);
-			NEW_EXPR(expr, binop, token.kind, expr, rhs);
+			NEW_EXPR(ctx, expr, binop, token.kind, expr, rhs);
 			break;
 
 		case CRIGHTASSOC:
 			token = ctx->token;
 			ADV(ctx);
 			rhs = pexpr(ctx, Leds[token.kind].bp-1);
-			NEW_EXPR(expr, binop, token.kind, expr, rhs);
+			NEW_EXPR(ctx, expr, binop, token.kind, expr, rhs);
 			break;
 		}
 	}
@@ -141,11 +142,11 @@ pstmt(P *ctx)
 			STMT *tbranch = pstmt(ctx);
 			skip(ctx, KELSE);
 			STMT *fbranch = pstmt(ctx);
-			NEW_STMT(stmt, ifelse, cond, tbranch, fbranch);
+			NEW_STMT(ctx, stmt, ifelse, cond, tbranch, fbranch);
 		}
 		break;
 	default:
-		NEW_STMT(stmt, exprstmt, pexpr(ctx, 0));
+		NEW_STMT(ctx, stmt, exprstmt, pexpr(ctx, 0));
 		skip(ctx, ';');
 	}
 	return stmt;

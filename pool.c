@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "pool.h"
@@ -15,7 +16,7 @@ pool_alloc(POOL *pool, size_t size)
 {
 	// allocate new page if neccessary
 	struct pool_header *header = *pool;
-	if (!header || POOL_PAGE_SIZE - header->offset < size) {
+	if (!header || POOL_PAGE_SIZE - size < header->offset) {
 		struct pool_header *new_header = malloc(POOL_PAGE_SIZE);
 		new_header->older = header;
 		new_header->offset = sizeof(struct pool_header);
@@ -24,13 +25,14 @@ pool_alloc(POOL *pool, size_t size)
 	}
 
 	// allocate from the top page
-	size_t offset = header->offset;
+	void *pointer = (char *)*pool + header->offset;
 	header->offset += size;
 	
 	// realign offset to 16-byte boundary
 	header->offset = (header->offset + 15) & ~(size_t)15;
 
-	return (char *)*pool + offset;
+	memset(pointer, 0, size);
+	return pointer;
 }
 
 void

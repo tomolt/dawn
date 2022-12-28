@@ -47,6 +47,7 @@ struct Parser {
 	char   symbuf[100];
 	Token  token;
 	int    nextvar; // TEMP
+	void  *ast_pool;
 };
 
 const char *fmttok(Token);

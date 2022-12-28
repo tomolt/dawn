@@ -203,5 +203,6 @@ initlex(P *ctx, char *path, void *file)
 	ctx->nextcol = 1;
 	ctx->nextvar = 0;
 	ADV(ctx);
+	ctx->ast_pool = NULL;
 }
 
