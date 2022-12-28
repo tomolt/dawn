@@ -13,7 +13,7 @@ clean:
 	rm -f amd64/*.o
 	rm -f dawn
 
-dawn: dawn.o util.o error.o lex.o parse.o amd64/ins.o amd64/cover.o amd64/su.o
+dawn: dawn.o util.o pool.o error.o lex.o parse.o amd64/ins.o amd64/cover.o amd64/su.o
 	$(LD) $(LDFLAGS) $^ -o $@
 
 .c.o:
@@ -21,6 +21,7 @@ dawn: dawn.o util.o error.o lex.o parse.o amd64/ins.o amd64/cover.o amd64/su.o
 
 dawn.o: dawn.h syntax.h ast.h
 util.o: util.h
+pool.o: pool.h
 error.o: syntax.h
 lex.o: syntax.h
 parse.o: syntax.h ast.h
