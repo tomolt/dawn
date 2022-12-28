@@ -67,6 +67,10 @@ struct tile {
 	struct operand operands[];
 };
 
+struct tiler {
+	void *tile_pool;
+};
+
 #define OPNO_ADD	0x00
 #define OPNO_SUB	0x05
 #define OPNO_AND	0x04
