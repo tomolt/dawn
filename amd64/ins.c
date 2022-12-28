@@ -2,10 +2,6 @@
 
 #include "ins.h"
 
-#define MAX_REGISTERS 2
-
-#define SETREG(ins,r) do { if ((r) > 7) (ins).prefixes |= PFX_REX_R; (ins).reg = (r) & 7; } while (0)
-
 static void
 assemble_prefixes(uint16_t prefixes, uint8_t **O)
 {

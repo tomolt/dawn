@@ -6,8 +6,6 @@
 
 #define MAX_REGISTERS 2
 
-#define SETREG(ins,r) do { if ((r) > 7) (ins).prefixes |= PFX_REX_R; (ins).reg = (r) & 7; } while (0)
-
 extern void dawn_assemble_ins(const struct ins *ins, uint8_t **O);
 
 static void
