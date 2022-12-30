@@ -43,7 +43,7 @@ modrm_from_expr(T *ctx, EXPR expr, bool is_dest, struct tile *tile)
 	switch (EXPR_KIND(expr)) {
 	case EXPR_varref:
 		{
-			const struct ast_varref *ref = expr;
+			const struct ast_varref *ref = (struct ast_varref *)expr;
 			tile->ins.mod = MOD_MEM_LD;
 			tile->ins.rm  = REG_SP;
 			tile->ins.index = REG_SP;
@@ -158,10 +158,10 @@ struct tile *
 tile_from_expr(T *ctx, EXPR expr)
 {
 	switch (EXPR_KIND(expr)) {
-	case EXPR_literal: return tile_from_literal(ctx, expr);
-	case EXPR_varref:  return tile_from_varref (ctx, expr);
-	case EXPR_unop:    return tile_from_unop   (ctx, expr);
-	case EXPR_binop:   return tile_from_binop  (ctx, expr);
+	case EXPR_literal: return tile_from_literal(ctx, (struct ast_literal *)expr);
+	case EXPR_varref:  return tile_from_varref (ctx, (struct ast_varref  *)expr);
+	case EXPR_unop:    return tile_from_unop   (ctx, (struct ast_unop    *)expr);
+	case EXPR_binop:   return tile_from_binop  (ctx, (struct ast_binop   *)expr);
 	default: assert(0); return NULL;
 	}
 }

@@ -8,13 +8,13 @@
 #define ADV(ctx) ((ctx)->token.kind = lex_token(ctx))
 #define NEW_EXPR(ctx, expr, name, ...) do {						\
 		struct ast_##name *_n = pool_alloc(&(ctx)->ast_pool, sizeof *_n);	\
-		*_n = (struct ast_##name){ EXPR_##name, __VA_ARGS__ };			\
-		(expr) = _n;								\
+		*_n = (struct ast_##name){ { EXPR_##name }, __VA_ARGS__ };		\
+		(expr) = &_n->base;							\
 	} while (0)
 #define NEW_STMT(ctx, stmt, name, ...) do {						\
 		struct ast_##name *_n = pool_alloc(&(ctx)->ast_pool, sizeof *_n);	\
-		*_n = (struct ast_##name){ STMT_##name, __VA_ARGS__ };			\
-		(stmt) = _n;								\
+		*_n = (struct ast_##name){ { STMT_##name }, __VA_ARGS__ };		\
+		(stmt) = &_n->base;							\
 	} while (0)
 
 #define CNONE   0
@@ -108,7 +108,7 @@ pexpr(P *ctx, int minbp)
 	}
 
 	while (Leds[ctx->token.kind].bp > minbp) {
-		EXPR *rhs;
+		EXPR rhs;
 		switch (Leds[ctx->token.kind].code) {
 		case CLEFTASSOC:
 			token = ctx->token;
@@ -137,11 +137,11 @@ pstmt(P *ctx)
 	case KIF:
 		{
 			ADV(ctx);
-			EXPR *cond = pexpr(ctx, 0);
+			EXPR cond = pexpr(ctx, 0);
 			skip(ctx, KTHEN);
-			STMT *tbranch = pstmt(ctx);
+			STMT tbranch = pstmt(ctx);
 			skip(ctx, KELSE);
-			STMT *fbranch = pstmt(ctx);
+			STMT fbranch = pstmt(ctx);
 			NEW_STMT(ctx, stmt, ifelse, cond, tbranch, fbranch);
 		}
 		break;

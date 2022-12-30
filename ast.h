@@ -1,8 +1,8 @@
-typedef void *EXPR;
-typedef void *STMT;
+typedef struct expr_base *EXPR;
+typedef struct stmt_base *STMT;
 
-#define EXPR_KIND(expr) (*(int *)(expr))
-#define STMT_KIND(stmt) (*(int *)(stmt))
+#define EXPR_KIND(expr) ((expr)->kind)
+#define STMT_KIND(stmt) ((stmt)->kind)
 
 enum {
 	EXPR_literal,
@@ -11,24 +11,28 @@ enum {
 	EXPR_binop,
 };
 
+struct expr_base {
+	int kind;
+};
+
 struct ast_literal {
-	int     kind;
+	struct expr_base base;
 	int64_t value;
 };
 
 struct ast_varref {
-	int kind;
+	struct expr_base base;
 	int id;
 };
 
 struct ast_unop {
-	int  kind;
+	struct expr_base base;
 	int  op;
 	EXPR arg;
 };
 
 struct ast_binop {
-	int  kind;
+	struct expr_base base;
 	int  op;
 	EXPR lhs;
 	EXPR rhs;
@@ -40,18 +44,22 @@ enum {
 	STMT_ifelse,
 };
 
-struct ast_vardecl {
+struct stmt_base {
 	int kind;
+};
+
+struct ast_vardecl {
+	struct stmt_base base;
 	int id;
 };
 
 struct ast_exprstmt {
-	int kind;
+	struct stmt_base base;
 	EXPR expr;
 };
 
 struct ast_ifelse {
-	int  kind;
+	struct stmt_base base;
 	EXPR cond;
 	STMT tbranch;
 	STMT fbranch;
