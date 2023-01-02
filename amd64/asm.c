@@ -49,4 +49,3 @@ dawn_assemble_ins(const struct ins *ins, uint8_t **O)
 		assemble_immed(ins->immed, INS_IMMED_WIDTH(ins), O);
 	}
 }
-
