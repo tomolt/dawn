@@ -1,11 +1,12 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <strings.h>
 
 #include "ins.h"
 
 #define MAX_REGISTERS 16
 
-#define VACANT UINT32_MAX
+#define NO_VREG UINT32_MAX
 
 typedef uint32_t vreg_num;
 
@@ -23,25 +24,54 @@ struct live_range {
 };
 
 struct allocator {
-	int num_active;
+	int8_t           *assignments;
+	unsigned          available;
 	struct live_range active[MAX_REGISTERS];
-	vreg_num utilization[MAX_REGISTERS];
-	int8_t *assignments;
+	int prev[MAX_REGISTERS+1];
+	int next[MAX_REGISTERS+1];
 };
 
-activate_range()
+#define FIRST(ctx) ((ctx)->next[MAX_REGISTERS])
+#define LAST(ctx)  ((ctx)->prev[MAX_REGISTERS])
+
+static void
+occupy_register(struct allocator *ctx, int reg, struct live_range range)
 {
+	ctx->available &= ~(1u - reg);
+	ctx->active[reg] = range;
+
+	int prev = MAX_REGISTERS;
+	int next = FIRST(ctx);
+	while (next < MAX_REGISTERS && ctx->active[next].end < range.end) {
+		prev = next;
+		next = ctx->next[next];
+	}
+
+	ctx->next[reg] = next;
+	ctx->prev[reg] = prev;
+	ctx->next[prev] = reg;
+	ctx->prev[next] = reg;
 }
 
 static void
-retire_ranges(struct allocator *ctx, cutoff)
+clear_register(struct allocator *ctx, int reg)
 {
-	while (ctx->num_active) {
-		struct live_range *range = &ctx->active[ctx->num_active-1];
-		if (range->end > cutoff) break;
-		int reg = ctx->assignments[range->vreg];
-		if (!(reg < 0)) ctx->utilization[reg] = VACANT;
-		ctx->num_active--;
+	ctx->available |= 1u << reg;
+
+	int prev = ctx->prev[reg];
+	int next = ctx->next[reg];
+	ctx->next[prev] = next;
+	ctx->prev[next] = prev;
+}
+
+static void
+clear_expired(struct allocator *ctx, size_t cutoff)
+{
+	int reg = FIRST(ctx);
+	while (reg < MAX_REGISTERS && ctx->active[reg].end <= cutoff) {
+		int next = ctx->next[reg];
+		clear_register(ctx, reg);
+		reg = next;
 	}
 }
 
@@ -53,30 +83,22 @@ select_register(struct allocator *ctx, uint8_t constraint)
 	switch (CON_TYPE(constraint)) {
 	case CON_HARD:
 		return CON_REGISTER(constraint);
+
 	case CON_SOFT:
 		reg = CON_REGISTER(constraint);
-		if (ctx->utilization[reg] == VACANT) {
-			return reg;
-		}
+		if ((ctx->available >> reg) & 1) return reg;
 	}
 
-	for (reg = 0; reg < MAX_REGISTERS; reg++) {
-		if (ctx->utilization[reg] == VACANT) {
-			return reg;
-		}
-	}
-
-	return -1;
+	return ffs(ctx->available) - 1;
 }
 
 static int
-evict_register()
+evict_register(struct allocator *ctx, struct live_range range)
 {
-	int reg;
-
-	for (reg = 0; reg < MAX_REGISTERS; reg++) {
-	}
-
+	int last = LAST(ctx);
+	struct live_range *last_range = &ctx->active[last];
+	if (last_range->end > range.end) return last;
+	if (last_range->begin < range.begin) return last;
 	return -1;
 }
 
@@ -88,27 +110,37 @@ compare_range_begin(const void *a, const void *b)
 }
 
 void
-dawn_regalloc(size_t num_ranges, struct live_range *ranges,
-	vreg_num num_vregs, int8_t *assignments)
+dawn_allocate_registers(size_t num_ranges, struct live_range *ranges,
+	int8_t *assignments)
 {
+	struct allocator ctx = { 0 };
+	ctx.assignments = assignments;
+	ctx.available = (MAX_REGISTERS - 1) & ~(1u << REG_SP);
+	ctx.prev[MAX_REGISTERS] = MAX_REGISTERS;
+	ctx.next[MAX_REGISTERS] = MAX_REGISTERS;
+
 	qsort(ranges, num_ranges, sizeof(struct live_range), compare_range_begin);
 
 	for (size_t cursor = 0; cursor < num_ranges; cursor++) {
-		range = ranges[cursor];
+		struct live_range range = ranges[cursor];
 
-		retire_ranges();
-		insert_sorted(active, range);
+		clear_expired(&ctx, range.begin);
 
-		int reg = select_register();
+		int reg = select_register(&ctx, range.constraint);
 		if (reg < 0) {
-			reg = evict_register();
-		}
-		if (utilization[reg] != VACANT) {
-			assignments[utilization[reg]] = -1;
+			reg = evict_register(&ctx, range);
+			if (reg < 0) {
+				ctx.assignments[range.vreg] = -1;
+				continue;
+			}
 		}
 
-		utilization[reg] = range.vreg;
-		assignments[range.vreg] = reg;
+		if (!((ctx.available >> reg) & 1)) {
+			clear_register(&ctx, reg);
+		}
+		
+		occupy_register(&ctx, reg, range);
+		ctx.assignments[range.vreg] = reg;
 	}
 
 	free(ranges);

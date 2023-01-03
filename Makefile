@@ -1,6 +1,6 @@
 CC=gcc
 LD=gcc
-CPPFLAGS=-D_POSIX_C_SOURCE=200809L
+CPPFLAGS=-D_XOPEN_SOURCE=700
 CFLAGS=-std=c11 -Wall -Wextra -pedantic -g
 LDFLAGS=-g
 
