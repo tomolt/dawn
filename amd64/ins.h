@@ -47,6 +47,12 @@ struct ins {
 	int64_t immed;
 };
 
+struct ins_node {
+	int degree;
+	struct ins ins;
+	struct ins_node *operands[];
+};
+
 enum { SLOT_NIL, SLOT_EMB, SLOT_REG, SLOT_RM, SLOT_BASE, SLOT_INDEX };
 #define SLOT_IS_DEST	0x0100
 

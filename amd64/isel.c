@@ -174,4 +174,3 @@ dawn_cover_ast(T *ctx, STMT stmt)
 	default: assert(0); return NULL;
 	}
 }
-
