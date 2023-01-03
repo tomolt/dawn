@@ -4,8 +4,6 @@
 
 #include "ins.h"
 
-#define MAX_REGISTERS 2
-
 extern void dawn_assemble_ins(const struct ins *ins, uint8_t **O);
 
 static void

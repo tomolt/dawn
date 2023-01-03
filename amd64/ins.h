@@ -3,6 +3,25 @@
 #define REG_SP	4
 #define REG_BP	5
 
+#define MAX_REGISTERS 16
+
+#define NO_VREG UINT32_MAX
+
+typedef uint32_t vreg_num;
+
+#define CON_NONE 0x00
+#define CON_HARD 0x40
+#define CON_SOFT 0x80
+#define CON_TYPE(c)     ((c)&0xC0)
+#define CON_REGISTER(c) ((c)&0x3F)
+
+struct live_range {
+	size_t   begin;
+	size_t   end;
+	vreg_num vreg;
+	uint8_t  constraint;
+};
+
 #define PFX_0F		0x1
 #define PFX_REX		0x2
 #define PFX_REX_W	0x4
@@ -26,10 +45,10 @@
 #define INS_HAS_IMMED(ins)   ((ins)->opcode & HAS_IMMED)
 #define INS_IMMED_WIDTH(ins) ((ins)->opcode & SMALL_IMMED ? 0 : ((ins)->prefixes & PFX_ADDRSZ ? 1 : ((ins)->prefixes & PFX_REX_W ? 3 : 2)))
 
-#define MOD_MEM_ND	0
-#define MOD_MEM_SD	1
-#define MOD_MEM_LD	2
-#define MOD_REG		3
+#define MODE_MEM_ND 0
+#define MODE_MEM_SD 1
+#define MODE_MEM_LD 2
+#define MODE_REG    3
 
 struct ins {
 	uint16_t prefixes;

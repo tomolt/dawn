@@ -4,28 +4,8 @@
 
 #include "ins.h"
 
-#define MAX_REGISTERS 16
-
-#define NO_VREG UINT32_MAX
-
-typedef uint32_t vreg_num;
-
-#define CON_NONE 0x00
-#define CON_HARD 0x40
-#define CON_SOFT 0x80
-#define CON_TYPE(c)     ((c)&0xC0)
-#define CON_REGISTER(c) ((c)&0x3F)
-
-struct live_range {
-	size_t   begin;
-	size_t   end;
-	vreg_num vreg;
-	uint8_t  constraint;
-};
-
 struct allocator {
-	int8_t           *assignments;
-	unsigned          available;
+	unsigned available;
 	struct live_range active[MAX_REGISTERS];
 	int prev[MAX_REGISTERS+1];
 	int next[MAX_REGISTERS+1];
@@ -111,10 +91,9 @@ compare_range_begin(const void *a, const void *b)
 
 void
 dawn_allocate_registers(size_t num_ranges, struct live_range *ranges,
-	int8_t *assignments)
+	int8_t *assignment)
 {
 	struct allocator ctx = { 0 };
-	ctx.assignments = assignments;
 	ctx.available = (MAX_REGISTERS - 1) & ~(1u << REG_SP);
 	ctx.prev[MAX_REGISTERS] = MAX_REGISTERS;
 	ctx.next[MAX_REGISTERS] = MAX_REGISTERS;
@@ -130,7 +109,7 @@ dawn_allocate_registers(size_t num_ranges, struct live_range *ranges,
 		if (reg < 0) {
 			reg = evict_register(&ctx, range);
 			if (reg < 0) {
-				ctx.assignments[range.vreg] = -1;
+				assignment[range.vreg] = -1;
 				continue;
 			}
 		}
@@ -140,7 +119,7 @@ dawn_allocate_registers(size_t num_ranges, struct live_range *ranges,
 		}
 		
 		occupy_register(&ctx, reg, range);
-		ctx.assignments[range.vreg] = reg;
+		assignment[range.vreg] = reg;
 	}
 
 	free(ranges);
