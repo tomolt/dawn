@@ -45,10 +45,10 @@ struct live_range {
 #define INS_HAS_IMMED(ins)   ((ins)->opcode & HAS_IMMED)
 #define INS_IMMED_WIDTH(ins) ((ins)->opcode & SMALL_IMMED ? 0 : ((ins)->prefixes & PFX_ADDRSZ ? 1 : ((ins)->prefixes & PFX_REX_W ? 3 : 2)))
 
-#define MODE_MEM_ND 0
-#define MODE_MEM_SD 1
-#define MODE_MEM_LD 2
-#define MODE_REG    3
+#define MOD_MEM_ND 0
+#define MOD_MEM_SD 1
+#define MOD_MEM_LD 2
+#define MOD_REG    3
 
 struct ins {
 	uint16_t prefixes;
@@ -66,13 +66,25 @@ struct ins {
 	int64_t immed;
 };
 
+struct iseq {
+	struct ins *ins;
+	size_t count;
+	size_t capac;
+};
+
+struct patch {
+	size_t  ins_idx;
+	uint8_t slot;
+	uint8_t vreg;
+};
+
 struct ins_node {
 	int degree;
 	struct ins ins;
 	struct ins_node *operands[];
 };
 
-enum { SLOT_NIL, SLOT_EMB, SLOT_REG, SLOT_RM, SLOT_BASE, SLOT_INDEX };
+enum { SLOT_NIL, SLOT_EMB, SLOT_REG, SLOT_RM, SLOT_BASE, SLOT_INDEX, SLOT_MODRM };
 #define SLOT_IS_DEST	0x0100
 
 struct operand {

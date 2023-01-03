@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "ins.h"
 
@@ -49,3 +50,78 @@ dawn_assemble_ins(const struct ins *ins, uint8_t **O)
 		assemble_immed(ins->immed, INS_IMMED_WIDTH(ins), O);
 	}
 }
+
+size_t
+iseq_append(struct iseq *iseq, struct ins *ins)
+{
+	if (iseq->count == iseq->capac) {
+		iseq->capac *= 2;
+		if (!iseq->capac) iseq->capac = 16;
+		iseq->ins = realloc(iseq->ins, iseq->capac * sizeof *ins);
+	}
+	size_t idx = iseq->count++;
+	iseq->ins[idx] = *ins;
+	return idx;
+}
+
+int
+load_spilled(struct iseq *out_iseq, struct patch *patch, int8_t *assignment)
+{
+	struct ins mov = { 0 };
+	mov.prefixes = PFX_REX_R;
+	mov.opcode = OPC_MOV_RM();
+	mov.reg   = patch->slot == SLOT_REG ? 6 : 7;
+	mov.mod   = MOD_MEM_LD;
+	mov.rm    = REG_SP;
+	mov.base  = REG_SP;
+	mov.index = REG_SP;
+	mov.scale = 0;
+	mov.disp  = -assignment[patch->vreg];
+	iseq_append(out_iseq, &mov);
+	return mov.reg;
+}
+
+static void
+apply_patch(struct iseq *out_iseq, struct ins *ins, struct patch *patch, int8_t *assignment)
+{
+	int reg = assignment[patch->vreg];
+	if (reg < 0) {
+		reg = load_spilled(out_iseq, patch, assignment);
+	}
+	switch (patch->slot) {
+	case SLOT_EMB:
+		ins->opcode += reg & 7;
+		if (reg > 7) ins->prefixes |= PFX_REX_B;
+		break;
+	case SLOT_REG:
+		ins->reg = reg & 7;
+		if (reg > 7) ins->prefixes |= PFX_REX_R;
+		break;
+	case SLOT_MODRM:
+		ins->rm = reg & 7;
+		if (reg > 7) ins->prefixes |= PFX_REX_B;
+		break;
+	}
+}
+
+#if 0
+
+struct ins *
+dawn_patch_ins(size_t num_in_ins, struct ins *in_ins, size_t num_patches, struct patch *patches, int8_t *assignment)
+{
+	struct ins *out_ins;
+
+	size_t next_patch = 0;
+	for (size_t i = 0; i < num_in_ins; i++) {
+		struct ins ins = in_ins[i];
+		while (next_patch < num_patches) {
+			struct patch *patch = &patches[next_patch];
+			if (patch->ins_idx != i) break;
+			apply_patch(&ins, patch, assignment);
+		}
+	}
+
+	free(in_ins);
+}
+
+#endif

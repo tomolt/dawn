@@ -94,7 +94,10 @@ dawn_allocate_registers(size_t num_ranges, struct live_range *ranges,
 	int8_t *assignment)
 {
 	struct allocator ctx = { 0 };
-	ctx.available = (MAX_REGISTERS - 1) & ~(1u << REG_SP);
+	ctx.available  = (MAX_REGISTERS - 1);
+	ctx.available &= ~(1u << REG_SP);
+	ctx.available &= ~(1u << 14);
+	ctx.available &= ~(1u << 15);
 	ctx.prev[MAX_REGISTERS] = MAX_REGISTERS;
 	ctx.next[MAX_REGISTERS] = MAX_REGISTERS;
 
