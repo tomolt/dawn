@@ -51,6 +51,9 @@ struct live_range {
 #define MOD_REG    3
 
 struct ins {
+	int64_t disp;
+	int64_t immed;
+
 	uint16_t prefixes;
 	uint16_t opcode;
 
@@ -61,9 +64,6 @@ struct ins {
 	uint8_t base;
 	uint8_t index;
 	uint8_t scale;
-
-	int64_t disp;
-	int64_t immed;
 };
 
 struct iseq {
@@ -73,40 +73,20 @@ struct iseq {
 };
 
 struct patch {
-	size_t  ins_idx;
-	uint8_t slot;
-	uint8_t vreg;
-};
-
-struct ins_node {
-	int degree;
-	struct ins ins;
-	struct ins_node *operands[];
-};
-
-enum { SLOT_NIL, SLOT_EMB, SLOT_REG, SLOT_RM, SLOT_BASE, SLOT_INDEX, SLOT_MODRM };
-#define SLOT_IS_DEST	0x0100
-
-struct operand {
-	struct tile *tile;
-	int slot;
-};
-
-struct tile {
-	struct ins ins;
-
-	int maxregs;
-	int holdregs;
-	int spill;
-
-	int genesis;
-	int arity;
-	struct operand operands[];
+	size_t   ins_idx;
+	vreg_num vreg;
+	uint8_t  slot;
 };
 
 struct tiler {
-	void *tile_pool;
+	struct iseq iseq;
+	struct patch *patches;
+	size_t num_patches;
+	size_t capac_patches;
+	vreg_num num_vregs;
 };
+
+enum { SLOT_EMB, SLOT_REG, SLOT_MODRM };
 
 #define OPNO_ADD	0x00
 #define OPNO_SUB	0x05

@@ -98,6 +98,7 @@ apply_patch(struct iseq *out_iseq, struct ins *ins, struct patch *patch, int8_t 
 		if (reg > 7) ins->prefixes |= PFX_REX_R;
 		break;
 	case SLOT_MODRM:
+		ins->mod = MOD_REG;
 		ins->rm = reg & 7;
 		if (reg > 7) ins->prefixes |= PFX_REX_B;
 		break;
