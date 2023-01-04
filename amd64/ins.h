@@ -5,23 +5,6 @@
 
 #define MAX_REGISTERS 16
 
-#define NO_VREG UINT32_MAX
-
-typedef uint32_t vreg_num;
-
-#define CON_NONE 0x00
-#define CON_HARD 0x40
-#define CON_SOFT 0x80
-#define CON_TYPE(c)     ((c)&0xC0)
-#define CON_REGISTER(c) ((c)&0x3F)
-
-struct live_range {
-	size_t   begin;
-	size_t   end;
-	vreg_num vreg;
-	uint8_t  constraint;
-};
-
 #define PFX_0F		0x1
 #define PFX_REX		0x2
 #define PFX_REX_W	0x4
@@ -71,22 +54,6 @@ struct iseq {
 	size_t count;
 	size_t capac;
 };
-
-struct patch {
-	size_t   ins_idx;
-	vreg_num vreg;
-	uint8_t  slot;
-};
-
-struct tiler {
-	struct iseq iseq;
-	struct patch *patches;
-	size_t num_patches;
-	size_t capac_patches;
-	vreg_num num_vregs;
-};
-
-enum { SLOT_EMB, SLOT_REG, SLOT_MODRM };
 
 #define OPNO_ADD	0x00
 #define OPNO_SUB	0x05
