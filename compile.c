@@ -14,46 +14,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#include "../pool.h"
-
-#define NO_VAR SIZE_MAX
-#define NUM_REGISTERS 16
-
-enum {
-	LOC_NONEXISTENT = 0,
-	LOC_REGISTER,
-	LOC_STACK
-};
-
-struct loc {
-	int    kind;
-	size_t address;
-};
-
-struct reg {
-	size_t var;
-	bool   available;
-};
-
-struct constraint {
-	size_t var;
-	struct loc loc;
-};
-
-struct tile {
-	struct tile *next;
-	struct ins ins;
-	int num_defs;
-	int num_uses;
-	struct constraint constraints[];
-};
-
-struct compiler {
-	struct reg regs[NUM_REGISTERS];
-	struct loc *var_locs;
-	size_t *next_use;
-	POOL tile_pool;
-};
+#include "compile.h"
 
 #if 0
 calc_usecounts()
@@ -84,6 +45,7 @@ drop_deps()
 }
 #endif
 
+#if 0
 static int
 allocate(struct compiler *ctx)
 {
@@ -105,7 +67,7 @@ allocate(struct compiler *ctx)
 }
 
 static struct loc
-spill(struct compiler *ctx, size_t var)
+assign_spill_loc(struct compiler *ctx, size_t var)
 {
 	(void)ctx, (void)var;
 	struct loc loc;
@@ -115,7 +77,7 @@ spill(struct compiler *ctx, size_t var)
 }
 
 static void
-transfer(struct compiler *ctx, struct loc src, struct loc dest)
+transfer(struct compiler *ctx, size_t var, struct loc dest)
 {
 	if (src.kind  == LOC_NONEXISTENT) return;
 	if (dest.kind == LOC_NONEXISTENT) return;
@@ -130,13 +92,32 @@ transfer(struct compiler *ctx, struct loc src, struct loc dest)
 	} else {
 		assert(0);
 	}
+
+	if (var.loc.kind == LOC_REGISTER) {
+		int reg = var.loc.address;
+		ctx->regs[reg].available = true;
+	}
+	var.loc = dest;
+	if (var.loc.kind == LOC_REGISTER) {
+		int reg = var.loc.address;
+		ctx->regs[reg].available = false;
+		ctx->regs[reg].var = var;
+	}
+}
+
+gen_spill()
+{
+}
+
+gen_unspill()
+{
 }
 
 static void
-fulfill(struct compiler *ctx, struct constraint *con, struct tile **tile_stack)
+satisfy(struct compiler *ctx, struct constraint *con, struct tile **tile_stack)
 {
-	if (ctx->var_locs[con->var].kind == LOC_REGISTER) {
-		 con->loc = ctx->var_locs[con->var];
+	if (ctx->var_loc[con->var].kind == LOC_REGISTER) {
+		 con->loc = ctx->var_loc[con->var];
 		 return;
 	}
 
@@ -144,21 +125,21 @@ fulfill(struct compiler *ctx, struct constraint *con, struct tile **tile_stack)
 
 	if (!ctx->regs[reg].available) {
 		size_t var = ctx->regs[reg].var;
-		ctx->var_locs[var] = spill(var);
-		transfer(ctx, ctx->var_locs[var], loc, tile_stack);
+		ctx->var_loc[var] = spill(var);
+		transfer(ctx, ctx->var_loc[var], loc, tile_stack);
 		ctx->regs[reg].available = true;
 	}
 
 	con->loc.kind = LOC_REGISTER;
 	con->loc.address = reg;
-	transfer(ctx, ctx->var_locs[var], loc, tile_stack);
+	transfer(ctx, ctx->var_loc[var], loc, tile_stack);
 }
 
 void
 compile(const struct museq *seq)
 {
 	struct compiler compiler = { 0 }, *ctx = &compiler;
-	ctx->var_locs = calloc(seq->count, sizeof *ctx->var_locs);
+	ctx->var_loc = calloc(seq->count, sizeof *ctx->var_loc);
 	ctx->next_use = calloc(seq->count, sizeof *ctx->next_use);
 	for (size_t i = 0; i < seq->count; i++) {
 		ctx->next_use[i] = SIZE_MAX;
@@ -175,32 +156,27 @@ compile(const struct museq *seq)
 		}
 #endif
 
-		cover(ctx, seq, cursor);
+		tile(ctx, seq, cursor);
 
-		preamble = NULL;
-		postamble = NULL;
-
-		/* fulfill all postconditions */
 		for (defs) {
-			fulfill(ctx, con, postamble);
+			satisfy(ctx, con);
+			if (def.var.spill.kind != LOC_NONEXISTENT) {
+				gen_spill();
+			}
 		}
 		for (defs) {
+			def.var.loc.address
 			release();
 		}
 
-		/* fulfill all preconditions */
 		for (uses) {
-			fulfill(ctx, con, preamble);
-			ctx->var_locs[con->var] = con->loc;
+			satisfy(ctx, con);
+			ctx->var_loc[con->var] = con->loc;
 		}
 
-		emit(postamble);
-		emit(tiling);
-		emit(preamble);
-
-		pool_release(&ctx->tile_pool);
+		emit(tile);
 	}
 
-	free(ctx->var_locs);
-	free(ctx->next_use);
+	free(ctx->vars);
 }
+#endif
