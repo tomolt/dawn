@@ -1,3 +1,5 @@
+struct museq;
+
 typedef struct SLoc   SLoc;
 typedef struct Token  Token;
 typedef struct Parser Parser;
@@ -47,7 +49,7 @@ struct Parser {
 	char   symbuf[100];
 	Token  token;
 	int    nextvar; // TEMP
-	void  *ast_pool;
+	struct museq *museq;
 };
 
 const char *fmttok(Token);
@@ -56,5 +58,5 @@ void error(SLoc, const char *, ...);
 
 int lex_token(Parser *ctx);
 void initlex(Parser *, char *, void *);
-void *parse(Parser *);
+void parse(Parser *);
 

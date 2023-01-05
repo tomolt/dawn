@@ -42,6 +42,7 @@ struct constraint {
 
 struct tile {
 	struct tile *next;
+	struct ins ins;
 	int num_defs;
 	int num_uses;
 	struct constraint constraints[];
@@ -52,7 +53,6 @@ struct compiler {
 	struct loc *var_locs;
 	size_t *next_use;
 	POOL tile_pool;
-	struct tile *tile_stack;
 };
 
 #if 0
@@ -133,7 +133,7 @@ transfer(struct compiler *ctx, struct loc src, struct loc dest)
 }
 
 static void
-accommodate(struct compiler *ctx, struct constraint *con)
+fulfill(struct compiler *ctx, struct constraint *con, struct tile **tile_stack)
 {
 	if (ctx->var_locs[con->var].kind == LOC_REGISTER) {
 		 con->loc = ctx->var_locs[con->var];
@@ -141,15 +141,17 @@ accommodate(struct compiler *ctx, struct constraint *con)
 	}
 
 	int reg = allocate(ctx);
-	con->loc.kind = LOC_REGISTER;
-	con->loc.address = reg;
 
 	if (!ctx->regs[reg].available) {
 		size_t var = ctx->regs[reg].var;
 		ctx->var_locs[var] = spill(var);
-		transfer(ctx, ctx->var_locs[var], loc);
+		transfer(ctx, ctx->var_locs[var], loc, tile_stack);
 		ctx->regs[reg].available = true;
 	}
+
+	con->loc.kind = LOC_REGISTER;
+	con->loc.address = reg;
+	transfer(ctx, ctx->var_locs[var], loc, tile_stack);
 }
 
 void
@@ -175,27 +177,27 @@ compile(const struct museq *seq)
 
 		cover(ctx, seq, cursor);
 
-		for (constraints) {
-			con.loc = accommodate(con);
-		}
+		preamble = NULL;
+		postamble = NULL;
 
-		for (uses) {
-			transfer(ctx->var_locs[con.var], con.loc);
-			ctx->var_locs[con.var] = con.loc;
-		}
-
-		add ins to stack;
-
+		/* fulfill all postconditions */
 		for (defs) {
-			transfer(con.loc, var_locs[]);
-			release(var_locs[]);
+			fulfill(ctx, con, postamble);
+		}
+		for (defs) {
+			release();
 		}
 
-		for () {
-			emit_ins();
+		/* fulfill all preconditions */
+		for (uses) {
+			fulfill(ctx, con, preamble);
+			ctx->var_locs[con->var] = con->loc;
 		}
 
-		ctx->tile_stack = NULL;
+		emit(postamble);
+		emit(tiling);
+		emit(preamble);
+
 		pool_release(&ctx->tile_pool);
 	}
 

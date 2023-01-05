@@ -9,6 +9,8 @@
 #define MU_MUL  0x25
 #define MU_DIV  0x26
 #define MU_MOD  0x27
+#define MU_SHL  0x28
+#define MU_SHR  0x29
 #define MU_LDL  0x30
 #define MU_STL  0x31
 #define MU_LDR  0x32
@@ -17,8 +19,8 @@
 
 struct muop {
 	uint8_t  op;
-	uint16_t lhs;
-	uint16_t rhs;
+	uint16_t arg1;
+	uint16_t arg2;
 };
 
 struct museq {
@@ -27,4 +29,5 @@ struct museq {
 	size_t capac;
 };
 
-size_t museq_append(op, lhs, rhs);
+size_t museq_append(struct museq *museq, uint8_t op, size_t arg1, size_t arg2);
+size_t museq_append_imm(struct museq *museq, int32_t value);

@@ -1,21 +1,11 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "syntax.h"
-#include "ast.h"
-#include "pool.h"
+#include "muop.h"
 
 #define ADV(ctx) ((ctx)->token.kind = lex_token(ctx))
-#define NEW_EXPR(ctx, expr, name, ...) do {						\
-		struct ast_##name *_n = pool_alloc(&(ctx)->ast_pool, sizeof *_n);	\
-		*_n = (struct ast_##name){ { EXPR_##name }, __VA_ARGS__ };		\
-		(expr) = &_n->base;							\
-	} while (0)
-#define NEW_STMT(ctx, stmt, name, ...) do {						\
-		struct ast_##name *_n = pool_alloc(&(ctx)->ast_pool, sizeof *_n);	\
-		*_n = (struct ast_##name){ { STMT_##name }, __VA_ARGS__ };		\
-		(stmt) = &_n->base;							\
-	} while (0)
 
 #define CNONE   0
 #define CNUM    1
@@ -64,6 +54,51 @@ static Led Leds[NUMTOKS] = {
 	['^']     = {  8, CLEFTASSOC },
 };
 
+static size_t
+construct_literal(P *ctx, int64_t value)
+{
+	// FIXME this will break for large literals.
+	return museq_append_imm(ctx->museq, (int32_t)value);
+}
+
+static size_t
+construct_varref(P *ctx, int var)
+{
+	return museq_append(ctx->museq, MU_LDL, var, 0);
+}
+
+static size_t
+construct_unop(P *ctx, unsigned char token, size_t arg)
+{
+	uint8_t op;
+	switch (token) {
+	case '-': op = MU_NEG; break;
+	case '~': op = MU_NOT; break;
+	default: assert(0);
+	}
+	return museq_append(ctx->museq, op, arg, 0);
+}
+
+static size_t
+construct_binop(P *ctx, unsigned char token, size_t lhs, size_t rhs)
+{
+	uint8_t op;
+	switch (token) {
+	case '+': op = MU_ADD; break;
+	case '-': op = MU_SUB; break;
+	case '&': op = MU_AND; break;
+	case '|': op = MU_OR;  break;
+	case '^': op = MU_XOR; break;
+	case '*': op = MU_MUL; break;
+	case '/': op = MU_DIV; break;
+	case '%': op = MU_MOD; break;
+	case LT2: op = MU_SHL; break;
+	case GT2: op = MU_SHR; break;
+	default: assert(0);
+	}
+	return museq_append(ctx->museq, op, lhs, rhs);
+}
+
 static void
 skip(P *ctx, int kind)
 {
@@ -73,10 +108,10 @@ skip(P *ctx, int kind)
 	ADV(ctx);
 }
 
-static EXPR
+static size_t
 pexpr(P *ctx, int minbp)
 {
-	EXPR  expr;
+	size_t expr;
 	Token token;
 
 	switch (Nuds[ctx->token.kind].code) {
@@ -85,12 +120,12 @@ pexpr(P *ctx, int minbp)
 		break;
 
 	case CNUM:
-		NEW_EXPR(ctx, expr, literal, ctx->token.num);
+		expr = construct_literal(ctx, ctx->token.num);
 		ADV(ctx);
 		break;
 
 	case CVAR:
-		NEW_EXPR(ctx, expr, varref, ctx->nextvar++);
+		expr = construct_varref(ctx, ctx->nextvar++);
 		ADV(ctx);
 		break;
 
@@ -103,25 +138,25 @@ pexpr(P *ctx, int minbp)
 	case CPREFIX:
 		token = ctx->token;
 		ADV(ctx);
-		NEW_EXPR(ctx, expr, unop, token.kind, pexpr(ctx, PREFIXPREC));
+		expr = construct_unop(ctx, token.kind, pexpr(ctx, PREFIXPREC));
 		break;
 	}
 
 	while (Leds[ctx->token.kind].bp > minbp) {
-		EXPR rhs;
+		size_t rhs;
 		switch (Leds[ctx->token.kind].code) {
 		case CLEFTASSOC:
 			token = ctx->token;
 			ADV(ctx);
 			rhs = pexpr(ctx, Leds[token.kind].bp);
-			NEW_EXPR(ctx, expr, binop, token.kind, expr, rhs);
+			expr = construct_binop(ctx, token.kind, expr, rhs);
 			break;
 
 		case CRIGHTASSOC:
 			token = ctx->token;
 			ADV(ctx);
 			rhs = pexpr(ctx, Leds[token.kind].bp-1);
-			NEW_EXPR(ctx, expr, binop, token.kind, expr, rhs);
+			expr = construct_binop(ctx, token.kind, expr, rhs);
 			break;
 		}
 	}
@@ -129,11 +164,11 @@ pexpr(P *ctx, int minbp)
 	return expr;
 }
 
-static STMT
+static void
 pstmt(P *ctx)
 {
-	STMT stmt;
 	switch (ctx->token.kind) {
+#if 0
 	case KIF:
 		{
 			ADV(ctx);
@@ -145,17 +180,17 @@ pstmt(P *ctx)
 			NEW_STMT(ctx, stmt, ifelse, cond, tbranch, fbranch);
 		}
 		break;
+#endif
 	default:
-		NEW_STMT(ctx, stmt, exprstmt, pexpr(ctx, 0));
+		pexpr(ctx, 0);
 		skip(ctx, ';');
 	}
-	return stmt;
 }
 
-void *
+void
 parse(P *ctx)
 {
 	ADV(ctx);
-	return pstmt(ctx);
+	pstmt(ctx);
 }
 
