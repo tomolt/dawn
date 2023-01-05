@@ -44,4 +44,3 @@ pool_release(POOL *pool)
 		free(header);
 	}
 }
-

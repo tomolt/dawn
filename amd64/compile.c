@@ -9,40 +9,53 @@
  * - rematerialization
  */
 
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <assert.h>
+
+#include "../pool.h"
+
+#define NO_VAR SIZE_MAX
+#define NUM_REGISTERS 16
+
 enum {
+	LOC_NONEXISTENT = 0,
 	LOC_REGISTER,
 	LOC_STACK
 };
 
 struct loc {
+	int    kind;
+	size_t address;
 };
 
 struct reg {
-	size_t inhabitant;
-	size_t next_use;
+	size_t var;
+	bool   available;
 };
 
-struct def {
-	size_t arg;
-	//uint8_t fixed_reg;
-	//size_t follows_arg;
-};
-
-struct use {
-	size_t arg;
-	//uint8_t fixed_reg;
+struct constraint {
+	size_t var;
+	struct loc loc;
 };
 
 struct tile {
-	struct tile *prev;
 	struct tile *next;
-	struct use uses[];
-	struct def defs[];
+	int num_defs;
+	int num_uses;
+	struct constraint constraints[];
 };
 
 struct compiler {
+	struct reg regs[NUM_REGISTERS];
+	struct loc *var_locs;
+	size_t *next_use;
+	POOL tile_pool;
+	struct tile *tile_stack;
 };
 
+#if 0
 calc_usecounts()
 {
 	for (size_t i = museq->count; i--;) {
@@ -69,78 +82,123 @@ drop_deps()
 		usecounts[i - op->arg1]--;
 	}
 }
+#endif
 
-transfer()
+static int
+allocate(struct compiler *ctx)
 {
-}
-
-select_reg()
-{
-	if (fixed_reg) {
-		return fixed_reg;
+	for (int i = 0; i < NUM_REGISTERS; i++) {
+		if (ctx->regs[i].available) return i;
 	}
 
-	for () {
-		if (available) {
-			return reg;
-		}
-	}
-
-	candidate;
-	for () {
-		if (regs[reg].next_use > regs[candidate].next_use) {
-			candidate = reg;
+	int candidate = 0;
+	size_t furthest_use = ctx->next_use[ctx->regs[0].var];
+	for (int i = 1; i < NUM_REGISTERS; i++) {
+		size_t next_use = ctx->next_use[ctx->regs[i].var];
+		if (next_use > furthest_use) {
+			candidate = i;
+			furthest_use = next_use;
 		}
 	}
 
 	return candidate;
 }
 
-void
-compile(const struct museq *seq, uint16_t *usecounts)
+static struct loc
+spill(struct compiler *ctx, size_t var)
 {
-	uint8_t *which_reg;
-	for (size_t cursor = seq->count; cursor--;) {
-		const struct muop *op = &seq->muops[cursor];
+	(void)ctx, (void)var;
+	struct loc loc;
+	loc.kind = LOC_STACK;
+	loc.address = 0;
+	return loc;
+}
 
+static void
+transfer(struct compiler *ctx, struct loc src, struct loc dest)
+{
+	if (src.kind  == LOC_NONEXISTENT) return;
+	if (dest.kind == LOC_NONEXISTENT) return;
+	if (src.kind == dest.kind && src.address == dest.address) return;
+
+	if (src.kind == LOC_REGISTER && dest.kind == LOC_REGISTER) {
+		X86_MOV_RR;
+	} else if (src.kind == LOC_REGISTER && dest.kind == LOC_STACK) {
+		X86_MOV_MR;
+	} else if (src.kind == LOC_STACK && dest.kind == LOC_REGISTER) {
+		X86_MOV_RM;
+	} else {
+		assert(0);
+	}
+}
+
+static void
+accommodate(struct compiler *ctx, struct constraint *con)
+{
+	if (ctx->var_locs[con->var].kind == LOC_REGISTER) {
+		 con->loc = ctx->var_locs[con->var];
+		 return;
+	}
+
+	int reg = allocate(ctx);
+	con->loc.kind = LOC_REGISTER;
+	con->loc.address = reg;
+
+	if (!ctx->regs[reg].available) {
+		size_t var = ctx->regs[reg].var;
+		ctx->var_locs[var] = spill(var);
+		transfer(ctx, ctx->var_locs[var], loc);
+		ctx->regs[reg].available = true;
+	}
+}
+
+void
+compile(const struct museq *seq)
+{
+	struct compiler compiler = { 0 }, *ctx = &compiler;
+	ctx->var_locs = calloc(seq->count, sizeof *ctx->var_locs);
+	ctx->next_use = calloc(seq->count, sizeof *ctx->next_use);
+	for (size_t i = 0; i < seq->count; i++) {
+		ctx->next_use[i] = SIZE_MAX;
+	}
+	for (int i = 0; i < NUM_REGISTERS; i++) {
+		ctx->regs[i].available = true;
+	}
+
+	for (size_t cursor = seq->count; cursor--;) {
+#if 0
 		if (!usecounts[cursor]) {
 			drop_deps();
 			continue;
 		}
+#endif
 
-		cover();
+		cover(ctx, seq, cursor);
 
-		for (uses) {
-			if (in_reg(use.arg)) {
-				reg = ;
-			} else {
-				/* arg is apparently not needed after the current instruction.
-				 * it may therefore overlap with any definitions. */
-				reg = select_reg();
-			}
-		}
-
-		for (defs) {
-			if (!in_reg(def.arg)) {
-				reg = select_reg();
-				transfer();
-			} else {
-				reg = ;
-			}
-		}
-
-		build_ins();
-		encode_ins();
-		prepend_ins();
-
-		for (defs) {
-			release_reg();
+		for (constraints) {
+			con.loc = accommodate(con);
 		}
 
 		for (uses) {
-			if (!in_reg(use.arg)) {
-				unspill();
-			}
+			transfer(ctx->var_locs[con.var], con.loc);
+			ctx->var_locs[con.var] = con.loc;
 		}
+
+		add ins to stack;
+
+		for (defs) {
+			transfer(con.loc, var_locs[]);
+			release(var_locs[]);
+		}
+
+		for () {
+			emit_ins();
+		}
+
+		ctx->tile_stack = NULL;
+		pool_release(&ctx->tile_pool);
 	}
+
+	free(ctx->var_locs);
+	free(ctx->next_use);
 }
