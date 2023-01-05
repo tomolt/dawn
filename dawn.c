@@ -15,6 +15,7 @@ main(int argc, char **argv)
 	parser.museq = &museq;
 	initlex(&parser, "stdin", stdin);
 	parse(&parser);
+	museq_format(&museq, stdout);
 	free(museq.muops);
 	return 0;
 }

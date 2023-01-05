@@ -1,5 +1,6 @@
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "muop.h"
 
@@ -37,3 +38,48 @@ museq_append_imm(struct museq *museq, int32_t value)
 	return idx;
 }
 
+static const char *muop_names[256] = {
+	[MU_COPY] = "copy",
+	[MU_NEG] = "neg",
+	[MU_NOT] = "not",
+	[MU_ADD] = "add",
+	[MU_SUB] = "sub",
+	[MU_AND] = "and",
+	[MU_OR ] = "or",
+	[MU_XOR] = "xor",
+	[MU_MUL] = "mul",
+	[MU_DIV] = "div",
+	[MU_MOD] = "mod",
+	[MU_SHL] = "shl",
+	[MU_SHR] = "shr",
+	[MU_LDL] = "ldl",
+	[MU_STL] = "stl",
+	[MU_LDR] = "ldr",
+	[MU_STR] = "str",
+	[MU_IMM] = "imm",
+};
+
+void
+museq_format(const struct museq *museq, void *file)
+{
+	for (size_t i = 0; i < museq->count; i++) {
+		const struct muop *muop = &museq->muops[i];
+		fprintf(file, "%4zu:  %s\t", i, muop_names[muop->op]);
+		switch (muop->op) {
+		case MU_IMM:
+			fprintf(file, "$%" PRId32 "\n", (int32_t)muop->arg1 |
+				((int32_t)muop->arg2 << 16));
+			break;
+
+		case MU_COPY: case MU_NEG: case MU_NOT: case MU_LDL: case MU_LDR:
+			fprintf(file, "%%%zu\n",
+				i - muop->arg1);
+			break;
+
+		default:
+			fprintf(file, "%%%zu,\t%%%zu\n",
+				i - muop->arg1, i - muop->arg2);
+			break;
+		}
+	}
+}

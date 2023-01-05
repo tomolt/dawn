@@ -31,3 +31,5 @@ struct museq {
 
 size_t museq_append(struct museq *museq, uint8_t op, size_t arg1, size_t arg2);
 size_t museq_append_imm(struct museq *museq, int32_t value);
+
+void museq_format(const struct museq *museq, void *file);
