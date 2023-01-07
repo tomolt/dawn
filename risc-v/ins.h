@@ -13,7 +13,8 @@ struct riscv_ins {
 };
 
 struct riscv_template {
-	int *constraints;
-	struct riscv_ins *ins;
+	int num_ins;
+	const struct riscv_ins *ins;
+	const int *constraints;
 };
 

@@ -2,6 +2,8 @@
 
 #include "ins.h"
 
+#define ARRAY_LENGTH(array) (sizeof(array)/sizeof*(array))
+
 enum { DEF, USE, IMM };
 
 #define LUI	0x37
@@ -13,28 +15,49 @@ enum { DEF, USE, IMM };
 #define OR	6
 #define XOR	4
 
-#define BEGIN_TPL(name)	\
-	const struct riscv_template riscv_tpl_##name = {
-#define END_TPL()	}};
-#define CON(...)	{ __VA_ARGS__, 0 }, {
-#define R(opcode, rd, funct3, rs1, ...)		\
-	(struct riscv_ins){ 0, opcode, rd, funct3, rs1, __VA_ARGS__, .fmt=FMT_R },
-#define I(opcode, rd, funct3, rs1, imm)		\
-	(struct riscv_ins){ imm, opcode, rd, funct3, rs1, .fmt=FMT_I },
-#define S(opcode, funct3, rs1, rs2, imm)	\
-	(struct riscv_ins){ imm, opcode, rd, funct3, rs1, rs2, .fmt=FMT_S },
-#define U(opcode, rd, imm)			\
-	(struct riscv_ins){ imm, opcode, rd, .fmt=FMT_U },
+#define BEGIN_TPL(name)						\
+	const struct riscv_ins riscv_ins_##name[] = {
+#define CON(...)
+#define R(opcode, rd, funct3, rs1, ...)				\
+	{ 0, opcode, rd, funct3, rs1, __VA_ARGS__, .fmt=FMT_R },
+#define I(opcode, rd, funct3, rs1, imm)				\
+	{ imm, opcode, rd, funct3, rs1, .fmt=FMT_I },
+#define S(opcode, funct3, rs1, rs2, imm)			\
+	{ imm, opcode, rd, funct3, rs1, rs2, .fmt=FMT_S },
+#define U(opcode, rd, imm)					\
+	{ imm, opcode, rd, .fmt=FMT_U },
 #define X(n)		(0x80+(n))
+#define END_TPL()	};
 #include "templates.def"
 #undef BEGIN_TPL
-#undef END_TPL
 #undef CON
 #undef R
 #undef I
 #undef S
 #undef U
 #undef X
+#undef END_TPL
+
+#define BEGIN_TPL(name)						\
+	const struct riscv_template riscv_tpl_##name = {	\
+		ARRAY_LENGTH(riscv_ins_##name),			\
+		riscv_ins_##name,
+#define CON(...)	(int[]){ __VA_ARGS__, 0 },
+#define END_TPL()	};
+#define R(opcode, rd, funct3, rs1, ...)
+#define I(opcode, rd, funct3, rs1, imm)
+#define S(opcode, funct3, rs1, rs2, imm)
+#define U(opcode, rd, imm)
+#define X(n)	0
+#include "templates.def"
+#undef BEGIN_TPL
+#undef CON
+#undef R
+#undef I
+#undef S
+#undef U
+#undef X
+#undef END_TPL
 
 #if 0
 static struct tile
