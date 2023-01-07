@@ -17,6 +17,13 @@
 #define MU_STR  0x33
 #define MU_IMM  0x40
 
+#if 0
+#define MU_JUMP
+#define MU_BR
+#define MU_CALL
+#define MU_RET
+#endif
+
 struct muop {
 	uint8_t  op;
 	uint16_t arg1;
@@ -28,6 +35,11 @@ struct museq {
 	size_t count;
 	size_t capac;
 };
+
+int  muop_arity(uint8_t op);
+bool muop_side_effects(uint8_t op);
+bool muop_valued(uint8_t op);
+bool muop_commutative(uint8_t op);
 
 size_t museq_append(struct museq *museq, uint8_t op, size_t arg1, size_t arg2);
 size_t museq_append_imm(struct museq *museq, int32_t value);

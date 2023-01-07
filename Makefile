@@ -13,7 +13,7 @@ clean:
 	rm -f amd64/*.o
 	rm -f dawn
 
-dawn: dawn.o util.o pool.o error.o lex.o parse.o muop.o compile.o
+dawn: dawn.o util.o pool.o error.o lex.o parse.o muop.o compile.o risc-v/tile.o
 	$(LD) $(LDFLAGS) $^ -o $@
 
 .c.o:
@@ -28,3 +28,5 @@ parse.o: syntax.h muop.h
 muop.o: muop.h
 compile.o: compile.h
 amd64/asm.o: amd64/ins.h
+risc-v/tile.o: risc-v/ins.h risc-v/templates.def
+

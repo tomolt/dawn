@@ -1,8 +1,42 @@
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "muop.h"
+
+int
+muop_arity(uint8_t op)
+{
+	switch (op) {
+	case MU_IMM: return 0;
+	case MU_COPY: case MU_NEG: case MU_NOT: case MU_LDL: case MU_STL: case MU_LDR:
+		     return 1;
+	default: return 2;
+	}
+}
+
+bool
+muop_side_effects(uint8_t op)
+{
+	return op == MU_STL || op == MU_STR;
+}
+
+bool
+muop_valued(uint8_t op)
+{
+	return op != MU_STL && op != MU_STR;
+}
+
+bool
+muop_commutative(uint8_t op)
+{
+	switch (op) {
+	case MU_ADD: case MU_AND: case MU_OR: case MU_XOR: case MU_MUL:
+		return true;
+	default: return false;
+	}
+}
 
 size_t
 museq_append(struct museq *museq, uint8_t op, size_t arg1, size_t arg2)

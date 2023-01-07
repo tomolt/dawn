@@ -1,0 +1,38 @@
+/*
+ *  R(opcode,   rd, funct3, rs1,    rs2,    (funct7))
+ *  I(opcode,   rd, funct3, rs1,    imm)
+ *  S(opcode,       funct3, rs1,    rs2,    imm)
+ *  U(opcode,   rd,                 imm)
+ */
+
+BEGIN_TPL(mv)
+    CON(DEF, USE)
+    R(AR,   X(0),   ADD,    X(1),   0)
+END_TPL()
+
+BEGIN_TPL(li_small)
+    CON(DEF, IMM)
+    I(AI,   X(0),   ADD,    X(0),   X(1))
+END_TPL()
+
+BEGIN_TPL(li_large)
+    CON(DEF, IMM, IMM)
+    U(LUI,  X(0),                   X(1))
+    I(AI,   X(0),   ADD,    X(0),   X(2))
+END_TPL()
+
+BEGIN_TPL(add_r)
+    CON(DEF, USE, USE)
+    R(AR,   X(0),   ADD,    X(1),   X(2))
+END_TPL()
+
+BEGIN_TPL(add_i)
+    CON(DEF, USE, IMM)
+    I(AI,   X(0),   ADD,    X(1),   X(2))
+END_TPL()
+
+BEGIN_TPL(sub_r)
+    CON(DEF, USE, USE)
+    R(AR,   X(0),   ADD,    X(1),   X(2),  0x20)
+END_TPL()
+

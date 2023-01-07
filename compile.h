@@ -31,6 +31,7 @@ struct constraint {
 struct tile {
 	struct tile *next;
 	int template;
+	int op;
 	int num_defs;
 	int num_uses;
 	struct constraint constraints[];

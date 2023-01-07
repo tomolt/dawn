@@ -1,0 +1,20 @@
+#   M   prefixes    opcode  reg modrm
+#   MI  prefixes    opcode  reg modrm   imm
+#   MI8 prefixes    opcode  reg modrm   imm8
+#   EI  prefixes    opcode  reg         imm
+
+ADD=0
+OR=1
+AND=4
+SUB=5
+XOR=6
+
+SHL=4
+SHR=5
+SAR=7
+
+mov_rm():
+
+mov_mi():
+
+
