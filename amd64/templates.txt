@@ -1,7 +1,9 @@
-#   M   prefixes    opcode  reg modrm
-#   MI  prefixes    opcode  reg modrm   imm
-#   MI8 prefixes    opcode  reg modrm   imm8
-#   EI  prefixes    opcode  reg         imm
+/*
+ *  M(  prefixes,   opcode, reg,    modrm)
+ *  MI( prefixes,   opcode, reg,    modrm,  imm)
+ *  MI8(prefixes,   opcode, reg,    modrm,  imm8)
+ *  EI( prefixes,   opcode, reg,            imm)
+ */
 
 ADD=0
 OR=1
@@ -13,8 +15,38 @@ SHL=4
 SHR=5
 SAR=7
 
-mov_rm():
+BEGIN_TPL(mov_rm)
+    CON(DEF, USE|MEM, USE|MEM)
+    M(  0x8B, )
+END_TPL()
 
-mov_mi():
+BEGIN_TPL(mov_mi)
+    CON(DEF|MEM, IMM)
+    MI()
+END_TPL()
 
+BEGIN_TPL(arith_mi8)
+    CON(DEF, USE|MEM, IMM)
+    MI8(0,  )
+END_TPL()
+
+BEGIN_TPL(arith_mi)
+    CON(DEF, USE|MEM, IMM)
+    MI( 0,  )
+END_TPL()
+
+BEGIN_TPL(arith_rm)
+    CON(DEF, USE, USE|MEM)
+    MI( 0,  )
+END_TPL()
+
+BEGIN_TPL(shift_mi8)
+    CON(DEF|MEM, IMM)
+    MI8()
+END_TPL()
+
+BEGIN_TPL(shift_mc)
+    CON(DEF|MEM, USE|MEM)
+    mov 
+END_TPL()
 

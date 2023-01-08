@@ -15,6 +15,6 @@ struct riscv_ins {
 struct riscv_template {
 	int num_ins;
 	const struct riscv_ins *ins;
-	const int *constraints;
+	const char *constraints;
 };
 

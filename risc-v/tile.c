@@ -4,7 +4,7 @@
 
 #define ARRAY_LENGTH(array) (sizeof(array)/sizeof*(array))
 
-enum { DEF, USE, IMM };
+enum { DEF=1, USE, IMM };
 
 #define LUI	0x37
 #define AR      0x33    // Arithmetic 3-register operation
@@ -42,7 +42,7 @@ enum { DEF, USE, IMM };
 	const struct riscv_template riscv_tpl_##name = {	\
 		ARRAY_LENGTH(riscv_ins_##name),			\
 		riscv_ins_##name,
-#define CON(...)	(int[]){ __VA_ARGS__, 0 },
+#define CON(...)	(char[]){ __VA_ARGS__, 0 },
 #define END_TPL()	};
 #define R(opcode, rd, funct3, rs1, ...)
 #define I(opcode, rd, funct3, rs1, imm)
