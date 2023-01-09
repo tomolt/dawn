@@ -27,6 +27,11 @@ compile(const struct museq *museq, void *file)
 	size_t bindings[32];
 	for (size_t index = museq->count; index--;) {
 		const struct template *template = riscv_tile(museq, index, bindings);
+		for (int i = 0; template->constraints[i]; i++) {
+			if (template->constraints[i] != IMM) {
+				bindings[i] += 5;
+			}
+		}
 		riscv_assemble(template, bindings, file);
 	}
 }

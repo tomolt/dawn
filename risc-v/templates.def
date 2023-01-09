@@ -17,8 +17,8 @@ END_TPL()
 
 BEGIN_TPL(li_large)
     CON(DEF, IMM, IMM)
-    U(LUI,  X(0),                   X(1))
-    I(AI,   X(0),   ADD,    X(0),   X(2))
+    U(LUI,  X(0),                   X(2))
+    I(AI,   X(0),   ADD,    X(0),   X(1))
 END_TPL()
 
 BEGIN_TPL(add_r)

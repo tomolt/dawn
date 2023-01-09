@@ -64,7 +64,7 @@
 const struct template *
 riscv_tile(const struct museq *museq, size_t index, size_t *bindings)
 {
-	int64_t imm;
+	int32_t imm;
 	const struct muop *muop = &museq->muops[index];
 	switch (muop->op) {
 #if 0
