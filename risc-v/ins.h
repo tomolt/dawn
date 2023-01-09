@@ -1,3 +1,4 @@
+enum { DEF=1, USE, IMM };
 
 enum { FMT_R, FMT_I, FMT_S, FMT_U };
 
@@ -12,7 +13,7 @@ struct riscv_ins {
 	uint8_t fmt;
 };
 
-struct riscv_template {
+struct template {
 	int num_ins;
 	const struct riscv_ins *ins;
 	const char *constraints;

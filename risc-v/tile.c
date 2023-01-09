@@ -1,10 +1,12 @@
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <assert.h>
 
 #include "ins.h"
+#include "../muop.h"
 
 #define ARRAY_LENGTH(array) (sizeof(array)/sizeof*(array))
-
-enum { DEF=1, USE, IMM };
 
 #define LUI	0x37
 #define AR      0x33    // Arithmetic 3-register operation
@@ -39,7 +41,7 @@ enum { DEF=1, USE, IMM };
 #undef END_TPL
 
 #define BEGIN_TPL(name)						\
-	const struct riscv_template riscv_tpl_##name = {	\
+	const struct template riscv_tpl_##name = {	\
 		ARRAY_LENGTH(riscv_ins_##name),			\
 		riscv_ins_##name,
 #define CON(...)	(char[]){ __VA_ARGS__, 0 },
@@ -59,42 +61,13 @@ enum { DEF=1, USE, IMM };
 #undef X
 #undef END_TPL
 
+const struct template *
+riscv_tile(const struct museq *museq, size_t index, size_t *bindings)
+{
+	int64_t imm;
+	const struct muop *muop = &museq->muops[index];
+	switch (muop->op) {
 #if 0
-static struct tile
-tile_arith(int )
-{
-	if (muop_commutative() && museq->muops[] == MU_IMM) {
-	}
-
-	if (seq->muops[] == MU_IMM) {
-
-		imm = ;
-		opcode = 0x13;
-		funct3 = op;
-
-		if (op == SUB) {
-			opcode = ADD;
-			imm = -imm;
-		}
-	} else {
-		opcode = 0x33;
-		funct3 = op;
-
-		add_use();
-	}
-
-	add_use();
-	add_def();
-}
-
-struct tile
-riscv_tile()
-{
-	switch () {
-	case MU_COPY:
-		// add rd, x0, rs2
-		break;
-
 	case MU_NEG:
 		// sub rd, x0, rs2
 		break;
@@ -102,26 +75,27 @@ riscv_tile()
 	case MU_NOT:
 		// xori rd, rs1, -1
 		break;
+#endif
 
-	case MU_ADD: return tile_arith(RV32I_ADD);
-	case MU_SUB: return tile_arith(RV32I_SUB);
-	case MU_AND: return tile_arith(RV32I_AND);
-	case MU_OR:  return tile_arith(RV32I_OR);
-	case MU_XOR: return tile_arith(RV32I_XOR);
-	case MU_MUL: return tile_arith();
-	case MU_DIV: return tile_arith();
-	case MU_MOD: return tile_arith();
+	case MU_ADD:
+		bindings[0] = index;
+		bindings[1] = index - muop->arg1;
+		bindings[2] = index - muop->arg2;
+		return &riscv_tpl_add_r;
 
 	case MU_IMM:
-		if (imm >= -2048 && imm <= 2047) {
-			// addi rd, x0, imm
-		} else {
-			// lui  rd, ((imm>>12) + ((imm>>11)&1))
-			// addi rd, rd, (imm)
-		}
-		break;
+		//if (imm >= -2048 && imm <= 2047)
+		imm   = muop->arg2;
+		imm <<= 16;
+		imm  |= muop->arg1;
+		bindings[0] = index;
+		bindings[1] = imm & 0x00000FFF;
+		bindings[2] = imm & 0xFFFFF000;
+		return &riscv_tpl_li_large;
 
+	default:
+		assert(0);
+		return NULL;
 	}
 }
-#endif
 

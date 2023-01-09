@@ -15,6 +15,21 @@
 #include <assert.h>
 
 #include "compile.h"
+#include "muop.h"
+#include "risc-v/ins.h"
+
+extern const struct template *riscv_tile(const struct museq *museq, size_t index, size_t *bindings);
+extern void riscv_assemble(const struct template *template, const size_t *bindings, void *file);
+
+void
+compile(const struct museq *museq, void *file)
+{
+	size_t bindings[32];
+	for (size_t index = museq->count; index--;) {
+		const struct template *template = riscv_tile(museq, index, bindings);
+		riscv_assemble(template, bindings, file);
+	}
+}
 
 #if 0
 calc_usecounts()

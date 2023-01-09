@@ -7,6 +7,8 @@
 #include "syntax.h"
 #include "muop.h"
 
+void compile(const struct museq *museq, void *file);
+
 int
 main(int argc, char **argv)
 {
@@ -16,7 +18,8 @@ main(int argc, char **argv)
 	parser.museq = &museq;
 	initlex(&parser, "stdin", stdin);
 	parse(&parser);
-	museq_format(&museq, stdout);
+	museq_format(&museq, stderr);
+	compile(&museq, stdout);
 	free(museq.muops);
 	return 0;
 }
