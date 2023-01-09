@@ -84,14 +84,17 @@ riscv_tile(const struct museq *museq, size_t index, size_t *bindings)
 		return &riscv_tpl_add_r;
 
 	case MU_IMM:
-		//if (imm >= -2048 && imm <= 2047)
 		imm   = muop->arg2;
 		imm <<= 16;
 		imm  |= muop->arg1;
 		bindings[0] = index;
 		bindings[1] = imm & 0x00000FFF;
 		bindings[2] = imm & 0xFFFFF000;
-		return &riscv_tpl_li_large;
+		if (imm >= -2048 && imm <= 2047) {
+			return &riscv_tpl_li_small;
+		} else {
+			return &riscv_tpl_li_large;
+		}
 
 	default:
 		assert(0);
