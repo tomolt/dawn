@@ -24,18 +24,81 @@
 extern const struct template *riscv_tile(const struct museq *museq, size_t index, size_t *bindings);
 extern void riscv_assemble(const struct template *template, const size_t *bindings, struct revbuf *revbuf);
 
+static int
+select_register(struct compiler *ctx)
+{
+	for (int i = 0; i < NUM_REGISTERS; i++) {
+		if (ctx->regs[i].available) return i;
+	}
+
+	int candidate = 0;
+	size_t furthest_use = ctx->vars[ctx->regs[0].var].next_use;
+	for (int i = 1; i < NUM_REGISTERS; i++) {
+		size_t next_use = ctx->vars[ctx->regs[i].var].next_use;
+		if (next_use > furthest_use) {
+			candidate = i;
+			furthest_use = next_use;
+		}
+	}
+
+	return candidate;
+}
+
+static int
+allocate_register(struct compiler *ctx, size_t var)
+{
+	int reg = select_register(ctx);
+	if (!ctx->regs[reg].available) {
+		// TODO (un)spill previous variable
+		ctx->vars[ctx->regs[reg].var].reg = NUM_REGISTERS;
+	}
+	ctx->regs[reg].var = var;
+	ctx->regs[reg].available = false;
+	ctx->vars[var].next_use = ctx->index;
+	ctx->vars[var].reg = reg;
+	return reg;
+}
+
+static int
+move_to_register(struct compiler *ctx, size_t var)
+{
+	if (ctx->vars[var].reg < NUM_REGISTERS) {
+		return ctx->vars[var].reg;
+	} else {
+		return allocate_register(ctx, var);
+	}
+}
+
 void
 compile(const struct museq *museq, void *file)
 {
 	struct revbuf revbuf = { 0 };
 	size_t bindings[32];
+	struct compiler compiler = { 0 }, *ctx = &compiler;
+	ctx->vars = calloc(museq->count, sizeof *ctx->vars);
+	for (int i = 0; i < NUM_REGISTERS; i++) {
+		ctx->regs[i].available = true;
+	}
+	for (size_t i = 0; i < museq->count; i++) {
+		ctx->vars[i].next_use = SIZE_MAX;
+		ctx->vars[i].reg = NUM_REGISTERS;
+	}
 	for (size_t index = museq->count; index--;) {
+		ctx->index = index;
 		const struct template *template = riscv_tile(museq, index, bindings);
+
 		for (int i = 0; template->constraints[i]; i++) {
-			if (template->constraints[i] != IMM) {
-				bindings[i] += 5;
+			if (template->constraints[i] == USE) {
+				bindings[i] = move_to_register(ctx, bindings[i]);
 			}
 		}
+
+		for (int i = 0; template->constraints[i]; i++) {
+			if (template->constraints[i] == DEF) {
+				bindings[i] = move_to_register(ctx, bindings[i]);
+			}
+		}
+
 		riscv_assemble(template, bindings, &revbuf);
 	}
 	fwrite(revbuf.data + revbuf.start, 1, revbuf.capac - revbuf.start, file);
@@ -72,26 +135,6 @@ drop_deps()
 #endif
 
 #if 0
-static int
-allocate(struct compiler *ctx)
-{
-	for (int i = 0; i < NUM_REGISTERS; i++) {
-		if (ctx->regs[i].available) return i;
-	}
-
-	int candidate = 0;
-	size_t furthest_use = ctx->next_use[ctx->regs[0].var];
-	for (int i = 1; i < NUM_REGISTERS; i++) {
-		size_t next_use = ctx->next_use[ctx->regs[i].var];
-		if (next_use > furthest_use) {
-			candidate = i;
-			furthest_use = next_use;
-		}
-	}
-
-	return candidate;
-}
-
 static struct loc
 assign_spill_loc(struct compiler *ctx, size_t var)
 {

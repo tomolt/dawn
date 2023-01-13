@@ -40,5 +40,6 @@ struct tile {
 struct compiler {
 	struct reg regs[NUM_REGISTERS];
 	struct var *vars;
+	size_t index;
 };
 
