@@ -27,7 +27,7 @@ error.o: syntax.h
 lex.o: syntax.h
 parse.o: syntax.h muop.h module.h
 muop.o: muop.h
-compile.o: compile.h
+compile.o: compile.h revbuf.h
 amd64/asm.o: amd64/ins.h
 risc-v/tile.o: risc-v/ins.h muop.h risc-v/templates.def
-risc-v/asm.o: risc-v/ins.h
+risc-v/asm.o: risc-v/ins.h revbuf.h

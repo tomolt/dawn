@@ -12,18 +12,22 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "compile.h"
 #include "muop.h"
 #include "risc-v/ins.h"
+#include "revbuf.h"
 
 extern const struct template *riscv_tile(const struct museq *museq, size_t index, size_t *bindings);
-extern void riscv_assemble(const struct template *template, const size_t *bindings, void *file);
+extern void riscv_assemble(const struct template *template, const size_t *bindings, struct revbuf *revbuf);
 
 void
 compile(const struct museq *museq, void *file)
 {
+	struct revbuf revbuf = { 0 };
 	size_t bindings[32];
 	for (size_t index = museq->count; index--;) {
 		const struct template *template = riscv_tile(museq, index, bindings);
@@ -32,8 +36,10 @@ compile(const struct museq *museq, void *file)
 				bindings[i] += 5;
 			}
 		}
-		riscv_assemble(template, bindings, file);
+		riscv_assemble(template, bindings, &revbuf);
 	}
+	fwrite(revbuf.data + revbuf.start, 1, revbuf.capac - revbuf.start, file);
+	free(revbuf.data);
 }
 
 #if 0

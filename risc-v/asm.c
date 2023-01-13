@@ -1,11 +1,33 @@
 #include <stdint.h>
-#include <stddef.h>
-#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "ins.h"
+#include "../revbuf.h"
+
+static void
+revbuf_prepend(struct revbuf *revbuf, const void *data, size_t size)
+{
+	if (revbuf->start < size) {
+		if (!revbuf->capac) {
+			revbuf->capac = 256;
+			revbuf->start = revbuf->capac;
+			revbuf->data = malloc(revbuf->capac);
+		} else {
+			void *new_data = malloc(2 * revbuf->capac);
+			memcpy(new_data, revbuf->data, revbuf->capac);
+			free(revbuf->data);
+			revbuf->start += revbuf->capac;
+			revbuf->capac += revbuf->capac;
+			revbuf->data = new_data;
+		}
+	}
+	revbuf->start -= size;
+	memcpy(revbuf->data + revbuf->start, data, size);
+}
 
 void
-riscv_assemble(const struct template *template, const size_t *bindings, void *file)
+riscv_assemble(const struct template *template, const size_t *bindings, struct revbuf *revbuf)
 {
 	for (int i = 0; i < template->num_ins; i++) {
 		const struct riscv_ins *ins = &template->ins[i];
@@ -50,7 +72,7 @@ riscv_assemble(const struct template *template, const size_t *bindings, void *fi
 			break;
 		}
 
-		fwrite(&raw_ins, 1, 4, file);
+		revbuf_prepend(revbuf, &raw_ins, 4);
 	}
 }
 
