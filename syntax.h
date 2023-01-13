@@ -1,3 +1,4 @@
+struct module;
 struct museq;
 
 typedef struct SLoc   SLoc;
@@ -49,6 +50,7 @@ struct Parser {
 	char   symbuf[100];
 	Token  token;
 	int    nextvar; // TEMP
+	struct module *module;
 	struct museq *museq;
 };
 

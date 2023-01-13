@@ -20,12 +20,12 @@ dawn: dawn.o util.o pool.o error.o lex.o parse.o muop.o compile.o risc-v/tile.o 
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-dawn.o: dawn.h syntax.h
+dawn.o: dawn.h syntax.h module.h
 util.o: util.h
 pool.o: pool.h
 error.o: syntax.h
 lex.o: syntax.h
-parse.o: syntax.h muop.h
+parse.o: syntax.h muop.h module.h
 muop.o: muop.h
 compile.o: compile.h
 amd64/asm.o: amd64/ins.h
