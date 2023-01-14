@@ -83,6 +83,12 @@ riscv_tile(const struct museq *museq, size_t index, size_t *bindings)
 		bindings[2] = index - muop->arg2;
 		return &riscv_tpl_add_r;
 
+	case MU_SUB:
+		bindings[0] = index;
+		bindings[1] = index - muop->arg1;
+		bindings[2] = index - muop->arg2;
+		return &riscv_tpl_sub_r;
+
 	case MU_IMM:
 		imm   = muop->arg2;
 		imm <<= 16;

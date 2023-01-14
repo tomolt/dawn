@@ -29,6 +29,7 @@ revbuf_prepend(struct revbuf *revbuf, const void *data, size_t size)
 void
 riscv_assemble(const struct template *template, const size_t *bindings, struct revbuf *revbuf)
 {
+	char buffer[4*template->num_ins];
 	for (int i = 0; i < template->num_ins; i++) {
 		const struct riscv_ins *ins = &template->ins[i];
 
@@ -72,7 +73,8 @@ riscv_assemble(const struct template *template, const size_t *bindings, struct r
 			break;
 		}
 
-		revbuf_prepend(revbuf, &raw_ins, 4);
+		memcpy(buffer + 4*i, &raw_ins, 4);
 	}
+	revbuf_prepend(revbuf, buffer, 4*template->num_ins);
 }
 

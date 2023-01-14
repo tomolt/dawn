@@ -15,6 +15,7 @@ struct loc {
 struct reg {
 	size_t var;
 	bool   available;
+	bool   locked;
 };
 
 struct var {

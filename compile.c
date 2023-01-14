@@ -28,14 +28,15 @@ static int
 select_register(struct compiler *ctx)
 {
 	for (int i = 0; i < NUM_REGISTERS; i++) {
-		if (ctx->regs[i].available) return i;
+		if (ctx->regs[i].available && !ctx->regs[i].locked) return i;
 	}
 
-	int candidate = 0;
-	size_t furthest_use = ctx->vars[ctx->regs[0].var].next_use;
+	int candidate = -1;
+	size_t furthest_use = SIZE_MAX;
 	for (int i = 1; i < NUM_REGISTERS; i++) {
+		if (ctx->regs[i].locked) continue;
 		size_t next_use = ctx->vars[ctx->regs[i].var].next_use;
-		if (next_use > furthest_use) {
+		if (next_use >= furthest_use) {
 			candidate = i;
 			furthest_use = next_use;
 		}
@@ -79,6 +80,11 @@ compile(const struct museq *museq, void *file)
 	for (int i = 0; i < NUM_REGISTERS; i++) {
 		ctx->regs[i].available = true;
 	}
+	ctx->regs[0].locked = true;
+	ctx->regs[1].locked = true;
+	ctx->regs[2].locked = true;
+	ctx->regs[3].locked = true;
+	ctx->regs[4].locked = true;
 	for (size_t i = 0; i < museq->count; i++) {
 		ctx->vars[i].next_use = SIZE_MAX;
 		ctx->vars[i].reg = NUM_REGISTERS;
