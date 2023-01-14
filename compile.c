@@ -22,7 +22,7 @@
 #include "revbuf.h"
 
 extern const struct template *riscv_tile(const struct museq *museq, size_t index, size_t *bindings);
-extern void riscv_assemble(const struct template *template, const size_t *bindings, struct revbuf *revbuf);
+extern void riscv_assemble(const struct template *template, const size_t *assignments, struct revbuf *revbuf);
 
 static int
 select_register(struct compiler *ctx)
@@ -74,7 +74,8 @@ void
 compile(const struct museq *museq, void *file)
 {
 	struct revbuf revbuf = { 0 };
-	size_t bindings[32];
+	size_t convars[32];
+	size_t conregs[32];
 	struct compiler compiler = { 0 }, *ctx = &compiler;
 	ctx->vars = calloc(museq->count, sizeof *ctx->vars);
 	for (int i = 0; i < NUM_REGISTERS; i++) {
@@ -91,21 +92,34 @@ compile(const struct museq *museq, void *file)
 	}
 	for (size_t index = museq->count; index--;) {
 		ctx->index = index;
-		const struct template *template = riscv_tile(museq, index, bindings);
+		const struct template *template = riscv_tile(museq, index, convars);
+
+		for (int i = 0; template->constraints[i]; i++) {
+			if (template->constraints[i] == IMM) {
+				conregs[i] = convars[i];
+			}
+		}
 
 		for (int i = 0; template->constraints[i]; i++) {
 			if (template->constraints[i] == USE) {
-				bindings[i] = move_to_register(ctx, bindings[i]);
+				conregs[i] = move_to_register(ctx, convars[i]);
 			}
 		}
 
 		for (int i = 0; template->constraints[i]; i++) {
 			if (template->constraints[i] == DEF) {
-				bindings[i] = move_to_register(ctx, bindings[i]);
+				conregs[i] = move_to_register(ctx, convars[i]);
 			}
 		}
 
-		riscv_assemble(template, bindings, &revbuf);
+		riscv_assemble(template, conregs, &revbuf);
+
+		for (int i = 0; template->constraints[i]; i++) {
+			if (template->constraints[i] == DEF) {
+				ctx->regs[conregs[i]].available = true;
+				ctx->vars[convars[i]].reg = NUM_REGISTERS;
+			}
+		}
 	}
 	fwrite(revbuf.data + revbuf.start, 1, revbuf.capac - revbuf.start, file);
 	free(revbuf.data);

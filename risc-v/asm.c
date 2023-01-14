@@ -27,21 +27,21 @@ revbuf_prepend(struct revbuf *revbuf, const void *data, size_t size)
 }
 
 void
-riscv_assemble(const struct template *template, const size_t *bindings, struct revbuf *revbuf)
+riscv_assemble(const struct template *template, const size_t *assignments, struct revbuf *revbuf)
 {
 	char buffer[4*template->num_ins];
 	for (int i = 0; i < template->num_ins; i++) {
 		const struct riscv_ins *ins = &template->ins[i];
 
 		int8_t rd = ins->rd;
-		if (rd & 0x80) rd = bindings[rd&0x7F];
+		if (rd & 0x80) rd = assignments[rd&0x7F];
 		int8_t rs1 = ins->rs1;
-		if (rs1 & 0x80) rs1 = bindings[rs1&0x7F];
+		if (rs1 & 0x80) rs1 = assignments[rs1&0x7F];
 		int8_t rs2 = ins->rs2;
-		if (rs2 & 0x80) rs2 = bindings[rs2&0x7F];
+		if (rs2 & 0x80) rs2 = assignments[rs2&0x7F];
 		// FIXME this is probably pretty stupid
 		int32_t imm = ins->imm;
-		if (imm & 0x80) imm = (int32_t)bindings[imm&0x7F];
+		if (imm & 0x80) imm = (int32_t)assignments[imm&0x7F];
 
 		uint32_t raw_ins = 0;
 
